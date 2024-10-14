@@ -19,7 +19,7 @@ CURSOR cursor = { { 1, 1 }, {1, 1} };
 
 
 /* ================= game data =================== */
-char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH] = { 0 };
+char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH] = { 0 };  // 2, 16, 60
 
 RESOURCE resource = {
 	.spice = 0,
@@ -84,6 +84,55 @@ void outro(void) {
 	exit(0);
 }
 
+void building(void);
+void building(void) {
+	// [ 아군 ] [ 본진, 장판, 스파이스 매장지 ]
+	map[0][16][1] = 'B';
+	map[0][15][1] = 'B';
+	map[0][16][2] = 'B';
+	map[0][15][2] = 'B';
+
+	map[0][15][3] = 'P';
+	map[0][15][4] = 'P';
+	map[0][16][3] = 'P';
+	map[0][16][4] = 'P';
+
+	map[0][12][1] = '5';
+
+	// [ 적팀 ] [ 본진, 장판, 스파이스 매장지 ] 
+	map[0][1][58] = 'B';
+	map[0][2][58] = 'B';
+	map[0][1][57] = 'B';
+	map[0][2][57] = 'B';
+
+
+	map[0][1][55] = 'P';
+	map[0][2][55] = 'P';
+	map[0][1][56] = 'P';
+	map[0][2][56] = 'P';
+
+	map[0][5][58] = '5';
+
+	// [ 바위 ] [ 4개 ]
+	
+
+
+
+
+
+
+	// [ 샌드웜 ] [ 2개 ] -- 보류
+
+
+
+
+
+
+
+
+}
+
+
 void init(void) {
 	// layer 0(map[0])에 지형 생성
 	for (int j = 0; j < MAP_WIDTH; j++) {
@@ -98,6 +147,20 @@ void init(void) {
 			map[0][i][j] = ' ';
 		}
 	}
+
+	//    [[  건물 및 지형 배치 [ layer 0  &  B P S R ]  ]]
+	
+	// 접근 방식 --> 화면안에 알파벳으로 건물을 표시 한 후 
+	// 문자 색상 변경으로 각각 색을 표현해주면 될 듯.
+	building();
+
+
+
+	//    [[  유닛 배치  [ layer 1  &  H W ]  ]]
+
+
+
+
 
 	// layer 1(map[1])은 비워 두기(-1로 채움)
 	for (int i = 0; i < MAP_HEIGHT; i++) {

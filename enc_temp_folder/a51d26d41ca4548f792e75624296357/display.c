@@ -115,6 +115,28 @@ void display_cursor(CURSOR cursor) {
 	ch = frontbuf[curr.row][curr.column];
 	printc(padd(map_pos, curr), ch, COLOR_CURSOR);
 
-	
+	// 이전 위치의 문자를 기본 색으로 출력
+	char prev_char = frontbuf[prev.row][prev.column];
+
+	// 이전 위치가 'B'인 경우, 파란색 배경으로 설정
+	if (prev_char == 'B') {
+		printc(padd(map_pos, prev), prev_char, COLOR_DEFAULT + 16);
+	}
+	else {
+		printc(padd(map_pos, prev), prev_char, COLOR_DEFAULT);
+	}
+
+	// 현재 위치의 문자를 확인하고, 'B'일 경우 파란색 배경으로 출력
+	char curr_char = frontbuf[curr.row][curr.column];
+	if (curr_char == 'B') {
+		// 'B' 문자의 배경색을 파란색으로 설정
+		printc(padd(map_pos, curr), curr_char, COLOR_DEFAULT + 16);
+	}
+	else {
+		// 기본 색으로 커서 출력
+		printc(padd(map_pos, curr), curr_char, COLOR_CURSOR);
+	}
+
+
 
 }

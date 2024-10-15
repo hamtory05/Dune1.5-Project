@@ -90,5 +90,20 @@ typedef struct {
 	int move_period;	// '몇 ms마다 한 칸 움직이는지'를 뜻함
 	int next_move_time;	// 다음에 움직일 시간
 } OBJECT_SAMPLE;
+ 
+
+// 건물들을 배치시키는 구조체
+typedef struct {
+	POSITION pos1; // 건물 크기 1
+	POSITION pos2; // 건물 크기 2
+	POSITION pos3; // 건물 크기 3
+	POSITION pos4; // 건물 크기 4
+	char repr; // 건물 이름
+	int color; // 건물 색깔 <-- 이건 나중에 필요하게 되면 사용
+} OBJECT_BUILDING;
+
+
+
+
 
 #endif

@@ -66,7 +66,7 @@ int main(void) {
 		sample_obj_move();
 
 		// 화면 출력
-		building(map);
+		building(map); 
 		display(resource, map, cursor);
 		Sleep(TICK);
 		sys_clock += 10;

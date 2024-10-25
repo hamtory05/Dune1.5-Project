@@ -89,6 +89,7 @@ typedef struct {
 	char repr;			// 화면에 표시할 문자(representation)
 	int move_period;	// '몇 ms마다 한 칸 움직이는지'를 뜻함
 	int next_move_time;	// 다음에 움직일 시간
+	int layer;          // 어디 layer에 위치한지 확인
 } OBJECT_SAMPLE;
  
 
@@ -98,8 +99,8 @@ typedef struct {
 	POSITION pos2; // 건물 크기 2
 	POSITION pos3; // 건물 크기 3
 	POSITION pos4; // 건물 크기 4
-	char repr; // 건물 이름
-	int color; // 건물 색깔 <-- 이건 나중에 필요하게 되면 사용
+	char repr;     // 건물 이름
+	int layer;     // 몇번 째 레이어에 들어가는건지 구분 <-- 필요하면 사용
 } OBJECT_BUILDING;
 
 

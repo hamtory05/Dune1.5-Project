@@ -24,6 +24,7 @@ KEY get_key(void) {
 	if (!_kbhit()) {  // 입력된 키가 있는지 확인
 		return k_none;
 	}
+	
 	int byte = _getch();    // 입력된 키를 전달 받기
 	switch (byte) {
 	case 'q': return k_quit;  // 'q'를 누르면 종료

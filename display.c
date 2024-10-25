@@ -15,32 +15,12 @@ const POSITION map_pos = { 1, 0 };
 
 char backbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 char frontbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
+int colorbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 
 void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP_WIDTH]);
 void display_resource(RESOURCE resource);
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
 void display_cursor(CURSOR cursor);
-
-// New
-void p_f_base(OBJECT_BUILDING fb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-
-void p_e_base(OBJECT_BUILDING eb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-
-void p_f_plate(OBJECT_BUILDING fp, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-
-void p_e_plate(OBJECT_BUILDING ep, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-
-void p_start_spice(OBJECT_BUILDING ss, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-
-void p_rock_1(OBJECT_BUILDING r1, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-
-void p_rock_2(OBJECT_BUILDING r2, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-
-void p_rock_3(OBJECT_BUILDING r3, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-
-void p_rock_4(OBJECT_BUILDING r4, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-
-void building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
 
 
 
@@ -50,7 +30,8 @@ OBJECT_BUILDING f_base = {
 	.pos2 = {16, 2},
 	.pos3 = {15, 1},
 	.pos4 = {15, 2},
-	.repr = 'B'
+	.repr = 'B',
+	.layer = 0
 };
 
 // [ 적군 본진 BASE ]
@@ -59,14 +40,16 @@ OBJECT_BUILDING e_base = {
 	.pos2 = {1, 58},
 	.pos3 = {2, 57},
 	.pos4 = {2, 58},
-	.repr = 'B'
+	.repr = 'B',
+	.layer = 0
 };
 
 // [ 초기 스파이스 매장지 2개 ]
 OBJECT_BUILDING start_spice = {
 	.pos1 = {12, 1},
 	.pos2 = {5, 58},
-	.repr = '5'
+	.repr = '5',
+	.layer = 0
 };
 
 // [ 아군 장판 ]
@@ -75,7 +58,8 @@ OBJECT_BUILDING f_plate = {
 	.pos2 = {15, 4},
 	.pos3 = {16, 3},
 	.pos4 = {16, 4},
-	.repr = 'P'
+	.repr = 'P',
+	.layer = 0
 };
 
 
@@ -85,31 +69,36 @@ OBJECT_BUILDING e_plate = {
 	.pos2 = {2, 55},
 	.pos3 = {1, 56},
 	.pos4 = {2, 56},
-	.repr = 'P'
+	.repr = 'P',
+	.layer = 0
 };
 
 // [ 바위 1 ~ 4 ]
 OBJECT_BUILDING rock_1 = {
 	.pos1 = {12, 6},
-	.repr = 'R'
+	.repr = 'R',
+	.layer = 0
 };
 OBJECT_BUILDING rock_2 = {
 	.pos1 = {5, 50},
-	.repr = 'R'
+	.repr = 'R',
+	.layer = 0
 };
 OBJECT_BUILDING rock_3 = {
 	.pos1 = {3, 27},
 	.pos2 = {3, 28},
 	.pos3 = {4, 27},
 	.pos4 = {4, 28},
-	.repr = 'R'
+	.repr = 'R',
+	.layer = 0
 };
 OBJECT_BUILDING rock_4 = {
 	.pos1 = {12, 35},
 	.pos2 = {12, 36},
 	.pos3 = {13, 35},
 	.pos4 = {13, 36},
-	.repr = 'R'
+	.repr = 'R',
+	.layer = 0
 };
 
 //  ==  움직이는 애들  ==
@@ -118,14 +107,20 @@ OBJECT_BUILDING rock_4 = {
 // [ 샌드웜 ]
 OBJECT_SAMPLE sandworm_1 = {
 	.pos = {2, 4},
-	
-	.repr = 'W'
+	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
+	.repr = 'W',
+	.move_period = 2500,
+	.next_move_time = 2500,
+	.layer = 1
 };
 
 OBJECT_SAMPLE sandworm_2 = {
 	.pos = {12, 55},
-	
-	.repr = 'W'
+	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
+	.repr = 'W',
+	.move_period = 2500,
+	.next_move_time = 2500,
+	.layer = 1
 };
 
 // [ 아군 하베스터 ]
@@ -225,18 +220,6 @@ void building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 void display(
 	RESOURCE resource,
 	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
@@ -275,44 +258,50 @@ void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP
 
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 	project(map, backbuf);
-	 
+	
 	for (int i = 0; i < MAP_HEIGHT; i++) {
 		for (int j = 0; j < MAP_WIDTH; j++) {
 			if (frontbuf[i][j] != backbuf[i][j]) {
 				POSITION pos = { i, j };
-
+				
 				// [ 아군 본진 ]
 				if (backbuf[i][j] == 'B' && (i == 16 || i == 15) && (j == 1 || j == 2)) {
 					// < 파란색 배경 >
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 16);
+					colorbuf[i][j] = COLOR_DEFAULT + 16;
 				}
 
 				// [ 적군 본진 ] 
 				else if (backbuf[i][j] == 'B' && (i == 1 || i == 2) && (j == 57 || j == 58)) {
 					// < 빨간색 배경 >
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 64);
+					colorbuf[i][j] = COLOR_DEFAULT + 64;
 				}
 
 				// [ 아군 적군 장판 ]
 				else if (backbuf[i][j] == 'P') {
 					// < 검은색 배경 >
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT);
+					printc(padd(map_pos, pos), backbuf[i][j], COLOR_BLACK);
+					colorbuf[i][j] = COLOR_BLACK;
 				}
 
 				// [ 스파이스 ]
 				else if (backbuf[i][j] == '5') {
 					// < 주황색 배경 >    아직 색 못 찾음
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 48);
+					colorbuf[i][j] = COLOR_DEFAULT + 48;
 				}
 
 				// [ 바위 ]
 				else if (backbuf[i][j] == 'R') {
 					// < 회색 배경 >      아직 색 못 찾음
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT);
+					colorbuf[i][j] = COLOR_DEFAULT;
 				}
 
 				else {
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_RESOURCE);
+					colorbuf[i][j] = COLOR_RESOURCE;
 				}
 
 			}
@@ -327,13 +316,14 @@ void display_cursor(CURSOR cursor) {
 	POSITION curr = cursor.current;
 
 	char ch = frontbuf[prev.row][prev.column];
-	printc(padd(map_pos, prev), ch, COLOR_DEFAULT);
+	printc(padd(map_pos, prev), ch, COLOR_BLACK);
+
+	// [ 커서가 지나간 자리의 색이 지워지지 않게 변경 ]
+	int pre_color = colorbuf[prev.row][prev.column]; // 전 위치의 색깔을 기억
+	printc(padd(map_pos, prev), ch, pre_color); // 지나간 자리를 다시 원래 색으로 변경
 
 	ch = frontbuf[curr.row][curr.column];
-	printc(padd(map_pos, curr), ch, COLOR_CURSOR);
-
-	
-
+	printc(padd(map_pos, curr), ch, COLOR_BLACK);
 }	
 
 

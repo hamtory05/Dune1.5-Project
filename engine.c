@@ -8,13 +8,16 @@
 void init(void);
 void intro(void);
 void outro(void);
-void cursor_move(DIRECTION dir);
+void cursor_move(DIRECTION dir, int move);
 void sample_obj_move(void);
 POSITION sample_obj_next_position(void);
 
 /* ================= control =================== */
 int sys_clock = 0;		// system-wide clock(ms)
 CURSOR cursor = { { 1, 1 }, {1, 1} };
+
+int move_count = 0;
+int move_check[2] = { 0 };
 
 
 /* ================= game data =================== */
@@ -48,9 +51,32 @@ int main(void) {
 		// loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인
 		KEY key = get_key();
 
-		// 키 입력이 있으면 처리
+		// sys_clock값에 따라 커서 여러칸 이동 변수 초기화
+		if (sys_clock % 102 == 0) {
+			move_count = 0; // 커서가 1칸 움직이는지 3칸 움직이는지 확인
+			for (int i = 0; i < 2; i++) {
+				move_check[i] = 0; // 3칸 움직이는 커서일 때, 동일한 방향키를 두번 눌렀는지 확인
+			}
+		}
+
+		// 키 입력이 있을 때, 1칸이동인지, 3칸이동인지 확인
 		if (is_arrow_key(key)) {
-			cursor_move(ktod(key));
+			move_count++;
+			if (move_count == 1) {
+				move_check[0] = key;
+			}
+			else if (move_count == 2) {
+				move_check[1] = key;
+			}
+		}
+		
+		// 키 입력이 있으면 처리
+		if (is_arrow_key(key) && move_count == 2 && move_check[0] == move_check[1]) {
+			cursor_move(ktod(key), 1);
+			move_count = 0; // 3칸 이동하고 나서 변수 초기화.
+		}
+		else if (is_arrow_key(key) && move_count == 1) {
+			cursor_move(ktod(key), 0);
 		}
 		else {
 			// 방향키 외의 입력
@@ -70,6 +96,9 @@ int main(void) {
 		display(resource, map, cursor);
 		Sleep(TICK);
 		sys_clock += 10;
+		
+		
+
 	}
 }
 
@@ -112,17 +141,24 @@ void init(void) {
 }
 
 // (가능하다면) 지정한 방향으로 커서 이동
-void cursor_move(DIRECTION dir) {
+void cursor_move(DIRECTION dir, int move) {
 	
 	POSITION curr = cursor.current;
 	POSITION new_pos = pmove(curr, dir);
+	if (move == 1) {
+		new_pos = pmove2(curr, dir);  
 
+	}
 	// validation check
 	if (1 <= new_pos.row && new_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= new_pos.column && new_pos.column <= MAP_WIDTH - 2) {
 
 		cursor.previous = cursor.current;
 		cursor.current = new_pos;
+	}
+	else { // 커서의 위치가 범위에서 벗어나려고 하면 계속 그 위치에 위치하게 하기.
+		cursor.previous = cursor.previous;
+		cursor.current = cursor.current;
 	}
 }
 

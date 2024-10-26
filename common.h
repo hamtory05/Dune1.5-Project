@@ -70,8 +70,15 @@ inline POSITION dtop(DIRECTION d) {
 	return direction_vector[d];
 }
 
+inline POSITION dtop2(DIRECTION d) {
+	static POSITION direction_vector[] = { {0, 0}, {-3, 0}, {0, 3}, {0, -3}, {3, 0} };
+	return direction_vector[d];
+}
+
 // p를 d 방향으로 이동시킨 POSITION
 #define pmove(p, d)		(padd((p), dtop(d)))
+
+#define pmove2(p, d)	(padd((p), dtop2(d)))
 
 /* ================= game data =================== */
 typedef struct {

@@ -68,6 +68,13 @@ int main(void) {
 			else if (move_count == 2) {
 				move_check[1] = key;
 			}
+			// 3칸 움직이는 경우, 방향키가 다르다면 한칸 움직이게 작동
+			if (move_count == 2 && move_check[1] != move_check[0]) {
+				move_count = 1;
+				for (int i = 0; i < 2; i++) {
+					move_check[i] = 0; // 초기화
+				}
+			}
 		}
 		
 		// 키 입력이 있으면 처리
@@ -82,6 +89,8 @@ int main(void) {
 			// 방향키 외의 입력
 			switch (key) {
 			case k_quit: outro();
+			case k_space: // 행동 추가 해야됨.
+			case k_esc:   // 행동 추가 해야됨.
 			case k_none:
 			case k_undef:
 			default: break;

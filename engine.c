@@ -22,6 +22,8 @@ int move_check[2] = { 0 };
 
 /* ================= game data =================== */
 char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH] = { 0 };  // 2, 16, 60
+char state_map[STATE_HEIGHT][STATE_WIDTH] = { 0 }; // 16, 110
+
 
 RESOURCE resource = {
 	.spice = 0,
@@ -45,7 +47,7 @@ int main(void) {
 
 	init();
 	intro();
-	display(resource, map, cursor);
+	display(resource, map, cursor, state_map);
 
 	while (1) {
 		// loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인
@@ -101,8 +103,7 @@ int main(void) {
 		sample_obj_move();
 
 		// 화면 출력
-		building(map); 
-		display(resource, map, cursor);
+		display(resource, map, cursor, state_map);
 		Sleep(TICK);
 		sys_clock += 10;
 		
@@ -144,6 +145,24 @@ void init(void) {
 			map[1][i][j] = -1;
 		}
 	}
+
+	// 명렁 & 상태창 기본 틀
+	for (int i = 0; i < STATE_WIDTH; i++) {
+		state_map[0][i] = '#';
+		state_map[STATE_HEIGHT - 1][i] = '#';
+	}
+
+	for (int i = 1; i < STATE_HEIGHT - 1; i++) {
+		state_map[i][0] = '#';
+		state_map[i][STATE_WIDTH - 1] = '#';
+		for (int j = 1; j < STATE_WIDTH - 1; j++) {
+			state_map[i][j] = ' ';
+		}
+	}
+	
+
+
+
 
 	// object sample
 	map[1][obj.pos.row][obj.pos.column] = 'o';

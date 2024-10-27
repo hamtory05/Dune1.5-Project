@@ -11,17 +11,21 @@
 // 출력할 내용들의 좌상단(topleft) 좌표
 const POSITION resource_pos = { 0, 0 };
 const POSITION map_pos = { 1, 0 };
+const POSITION state_pos = { 1, 62 };
 
 
 char backbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 char frontbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 int colorbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
+char state_backbuf[STATE_HEIGHT][STATE_WIDTH] = { 0 };
+char state_frontbuf[STATE_HEIGHT][STATE_WIDTH] = { 0 };
 
 void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP_WIDTH]);
 void display_resource(RESOURCE resource);
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
 void display_cursor(CURSOR cursor);
-
+void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]);
+void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]);
 
 
 // [ 아군 본진 BASE ]
@@ -223,11 +227,15 @@ void building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 void display(
 	RESOURCE resource,
 	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
-	CURSOR cursor)
+	CURSOR cursor,
+	char state_map[STATE_HEIGHT][STATE_WIDTH])
 {
 	display_resource(resource);
 	display_map(map);
 	display_cursor(cursor);
+	// NEW FUNC
+	building(map);
+	display_state_map(state_map);
 	// display_system_message()
 	// display_object_info()
 	// display_commands()
@@ -326,4 +334,30 @@ void display_cursor(CURSOR cursor) {
 	printc(padd(map_pos, curr), ch, COLOR_BLACK);
 }	
 
+// [ 상태 & 명령창 기본 틀 함수 ] 
+void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]) {
+	for (int i = 0; i < STATE_HEIGHT; i++) {
+		for (int j = 0; j < STATE_WIDTH; j++) {
+			if (src[i][j] >= 0) {
+				dest[i][j] = src[i][j];
+			}
+		}
+	}
+}
 
+// [ 상태 & 명령창 그리기 함수 ]
+void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
+	state_project(state_map, state_backbuf);
+
+	for (int i = 0; i < STATE_HEIGHT; i++) {
+		for (int j = 0; j < STATE_WIDTH; j++) {
+			if (state_frontbuf[i][j] != state_backbuf[i][j]) {
+				POSITION pos = { i, j };
+				if (state_backbuf[i][j] == '#') {
+					printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_RESOURCE);
+				}
+			}
+			state_frontbuf[i][j] = state_backbuf[i][j];
+		}
+	}
+}

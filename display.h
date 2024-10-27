@@ -21,7 +21,8 @@
 void display(
 	RESOURCE resource,
 	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
-	CURSOR cursor
+	CURSOR cursor,
+	char state_map[STATE_HEIGHT][STATE_WIDTH]
 );
 
 // New

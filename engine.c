@@ -91,7 +91,7 @@ int main(void) {
 			// 방향키 외의 입력
 			switch (key) {
 			case k_quit: outro();
-			case k_space: // 행동 추가 해야됨.
+			case k_space: state_spacebar(map, state_map, cursor);// 행동 추가 해야됨.
 			case k_esc:   // 행동 추가 해야됨.
 			case k_none:
 			case k_undef:
@@ -163,7 +163,6 @@ void init(void) {
 
 
 
-
 	// object sample
 	map[1][obj.pos.row][obj.pos.column] = 'o';
 }
@@ -189,6 +188,23 @@ void cursor_move(DIRECTION dir, int move) {
 		cursor.current = cursor.current;
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ================= sample object movement =================== */
 POSITION sample_obj_next_position(void) {

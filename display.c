@@ -11,8 +11,8 @@
 // 출력할 내용들의 좌상단(topleft) 좌표
 const POSITION resource_pos = { 0, 0 };
 const POSITION map_pos = { 1, 0 };
-const POSITION state_pos = { 1, 62 };
-
+const POSITION state_pos = { 1, 63 };
+const POSITION state_mes = { 2, 63 };
 
 char backbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 char frontbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
@@ -26,7 +26,8 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
 void display_cursor(CURSOR cursor);
 void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]);
 void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]);
-
+void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], 
+	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor);
 
 // [ 아군 본진 BASE ]
 OBJECT_BUILDING f_base = {
@@ -323,7 +324,7 @@ void display_cursor(CURSOR cursor) {
 	POSITION prev = cursor.previous;
 	POSITION curr = cursor.current;
 
-	char ch = frontbuf[prev.row][prev.column];
+	char ch = frontbuf[prev.row][prev.column]; 
 	printc(padd(map_pos, prev), ch, COLOR_BLACK);
 
 	// [ 커서가 지나간 자리의 색이 지워지지 않게 변경 ]
@@ -356,8 +357,36 @@ void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 				if (state_backbuf[i][j] == '#') {
 					printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_RESOURCE);
 				}
+				else {
+					printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_BLACK);
+				}
 			}
 			state_frontbuf[i][j] = state_backbuf[i][j];
 		}
 	}
+}
+
+// [ 스페이스바를 눌렀을 때 ]
+void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], 
+	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor) {
+	POSITION prev = cursor.previous;
+	POSITION curr = cursor.current;
+	POSITION pos = { 0, 1 };
+
+	// 상태 & 명령창 초기화
+	display_state_map(state_map);
+
+	// 상태 & 명령 출력
+	if (backbuf[curr.row][curr.column] == ' ') {
+		char state_message[100] = "지형 : 사막 지형";
+		prints(padd(state_mes, pos), state_message);
+	}
+	else if (backbuf[curr.row][curr.column] == 'B' && \
+		(curr.row == 1 || curr.row == 2) && (curr.column == 57 || curr.column == 58)) {
+		char state_message[100] = "건물 : 적군 본진";
+		prints(padd(state_mes, pos), state_message);
+	}
+
+
+	
 }

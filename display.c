@@ -196,79 +196,6 @@ void p_building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 }
 
 
-// =================================== [ 유닛 ] ======================================= //
-
-// ==== [ 구조체로 유닛 선언 ] ==== //
-
-// [ 샌드웜 ]
-OBJECT_SAMPLE sandworm_1 = {
-	.pos = {2, 4},
-	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
-	.repr = 'W',
-	.move_period = 2500,
-	.next_move_time = 2500,
-	.layer = 1
-};
-
-OBJECT_SAMPLE sandworm_2 = {
-	.pos = {12, 55},
-	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
-	.repr = 'W',
-	.move_period = 2500,
-	.next_move_time = 2500,
-	.layer = 1
-};
-
-// [ 아군 하베스터 ]
-OBJECT_SAMPLE f_hav = {
-	.pos = {14, 1},
-	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2}, 
-	.repr = 'H',
-	.move_period = 2000,
-	.next_move_time = 2000,
-	.layer = 1
-};
-
-
-// [ 적군 하베스터 ]
-OBJECT_SAMPLE e_hav = {
-	.pos = {3, 58},
-	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2}, 
-	.repr = 'H',
-	.move_period = 2000,
-	.next_move_time = 2000,
-	.layer = 1
-};
-
-// ==== [ 함수로 유닛 출력 ] ==== //
-
-// [ 아군 하베스터 출력 함수 ]
-void p_f_hav(OBJECT_SAMPLE f_hav, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	map[1][f_hav.pos.row][f_hav.pos.column] = f_hav.repr;
-}
-// [ 적군 하베스터 출력 함수 ]
-void p_e_hav(OBJECT_SAMPLE e_hav, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	map[1][e_hav.pos.row][e_hav.pos.column] = e_hav.repr;
-}
-
-// [ 샌드웜 1 출력 함수 ]
-void p_sandworm_1(OBJECT_SAMPLE sandworm_1, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	map[1][sandworm_1.pos.row][sandworm_1.pos.column] = sandworm_1.repr;
-}
-
-// [샌드웜 2 출력 함수 ]
-void p_sandworm_2(OBJECT_SAMPLE sandworm_2, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	map[1][sandworm_2.pos.row][sandworm_2.pos.column] = sandworm_2.repr;
-}
-
-// [ 모든 유닛 출력 함수 ]
-void p_unit(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	p_f_hav(f_hav, map);
-	p_e_hav(e_hav, map);
-	p_sandworm_1(sandworm_1, map);
-	p_sandworm_2(sandworm_2, map);
-}
-
 // =================================== [ DISPLAY ] ======================================= //
 
 void display(
@@ -282,7 +209,6 @@ void display(
 	display_cursor(cursor);
 	// NEW FUNC
 	p_building(map);
-	p_unit(map);
 	display_state_map(state_map);
 	// display_system_message()
 	// display_object_info()
@@ -531,5 +457,4 @@ void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 			printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_BLACK);
 		}
 	}
-
 }

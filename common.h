@@ -99,7 +99,6 @@ typedef struct {
 	char repr;			// 화면에 표시할 문자(representation)
 	int move_period;	// '몇 ms마다 한 칸 움직이는지'를 뜻함
 	int next_move_time;	// 다음에 움직일 시간
-	int layer;          // 어디 layer에 위치한지 확인
 } OBJECT_SAMPLE;
  
 

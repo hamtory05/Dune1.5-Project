@@ -41,6 +41,44 @@ OBJECT_SAMPLE obj = {
 	.next_move_time = 300
 };  
 
+// [ ¾Æ±º ÇÏº£½ºÅÍ ]
+OBJECT_SAMPLE f_hav_obj = {
+	.pos = {14, 1},
+	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
+	.repr = 'H',
+	.move_period = 2000,
+	.next_move_time = 2000
+};
+
+// [ Àû±º ÇÏº£½ºÅÍ ]
+OBJECT_SAMPLE e_hav_obj = {
+	.pos = {3, 58},
+	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
+	.repr = 'H',
+	.move_period = 2000,
+	.next_move_time = 2000
+};
+
+// [ »÷µå¿ú 1 ]
+OBJECT_SAMPLE sw1_obj = {
+	.pos = {2, 4},
+	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
+	.repr = 'W',
+	.move_period = 2500,
+	.next_move_time = 2500
+};
+
+// [ »÷µå¿ú 2 ]
+OBJECT_SAMPLE sw2_obj = {
+	.pos = {12, 55},
+	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
+	.repr = 'W',
+	.move_period = 2500,
+	.next_move_time = 2500
+};
+
+
+
 
 /* ================= main() =================== */
 int main(void) {
@@ -168,6 +206,12 @@ void init(void) {
 	
 	// object sample
 	map[1][obj.pos.row][obj.pos.column] = 'o';
+
+	// [ À¯´Ö ¿ÀºêÁ§Æ® ]
+	map[1][f_hav_obj.pos.row][f_hav_obj.pos.column] = f_hav_obj.repr;
+	map[1][e_hav_obj.pos.row][e_hav_obj.pos.column] = e_hav_obj.repr;
+	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr;
+	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = sw2_obj.repr;
 	
 }
 
@@ -194,22 +238,6 @@ void cursor_move(DIRECTION dir, int move) {
 		cursor.current = cursor.current;
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /* ================= sample object movement =================== */
@@ -270,7 +298,7 @@ void sample_obj_move(void) {
 	obj.next_move_time = sys_clock + obj.move_period;
 }
 
-// »÷µå¿ú »ö±ò + 96
+// [ »÷µå¿ú ]
 
 
 

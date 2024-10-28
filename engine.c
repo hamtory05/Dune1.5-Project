@@ -92,7 +92,7 @@ int main(void) {
 			// 방향키 외의 입력
 			switch (key) {
 			case k_quit: outro();
-			case k_esc: 
+			case k_esc: //state_esc(state_map);
 			case k_space: state_spacebar(map, state_map, cursor);
 			case k_none:
 			case k_undef:

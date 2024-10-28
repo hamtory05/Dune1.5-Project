@@ -20,6 +20,7 @@ int colorbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 char state_backbuf[STATE_HEIGHT][STATE_WIDTH] = { 0 };
 char state_frontbuf[STATE_HEIGHT][STATE_WIDTH] = { 0 };
 
+
 void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP_WIDTH]);
 void display_resource(RESOURCE resource);
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
@@ -221,7 +222,7 @@ OBJECT_SAMPLE sandworm_2 = {
 // [ 아군 하베스터 ]
 OBJECT_SAMPLE f_hav = {
 	.pos = {14, 1},
-	.dest = {12, 1}, // 스파이스 위치로 바꿔야함
+	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2}, 
 	.repr = 'H',
 	.move_period = 2000,
 	.next_move_time = 2000,
@@ -232,7 +233,7 @@ OBJECT_SAMPLE f_hav = {
 // [ 적군 하베스터 ]
 OBJECT_SAMPLE e_hav = {
 	.pos = {3, 58},
-	.dest = {5, 58}, // 스파이스 위치로 바꿔야함
+	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2}, 
 	.repr = 'H',
 	.move_period = 2000,
 	.next_move_time = 2000,
@@ -458,21 +459,68 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 	// [ 상태 & 명령 출력 ]
 	// < 빈 지형 >
 	if (backbuf[curr.row][curr.column] == ' ') {
-		char state_message[100] = "지형 : 사막 지형";
+		char state_message[] = "(빈)지형 : 사막 지형";
 		prints(padd(state_mes, pos_state), state_message);
 	}
 	// < 아군 본진 >
 	else if (backbuf[curr.row][curr.column] == 'B' && \
 		(curr.row == 16 || curr.row == 15) && (curr.column == 1 || curr.column == 2)) {
-		char state_message[100] = "건물 : 아군 본진";
+		char state_message[] = "건물 : 아군 본진";
+		prints(padd(state_mes, pos_state), state_message);
+	}
+	// < 적군 본진 >
+	else if (backbuf[curr.row][curr.column] == 'B' && \
+		(curr.row == 1 || curr.row == 2) && (curr.column == 57 || curr.column == 58)) {
+		char state_message[] = "건물 : 적군 본진";
+		prints(padd(state_mes, pos_state), state_message);
+	}
+	// < 아군 장판 >
+	else if (backbuf[curr.row][curr.column] == 'P' && \
+		(curr.row == 15 || curr.row == 16) && (curr.column == 3 || curr.column == 4)) {
+		char state_message[] = "건물 : 아군 장판";
+		prints(padd(state_mes, pos_state), state_message);
+	}
+	// < 적군 장판 >
+	else if (backbuf[curr.row][curr.column] == 'P' && \
+		(curr.row == 1 || curr.row == 2) && (curr.column == 55 || curr.column == 56)) {
+		char state_message[] = "건물 : 적군 장판";
+		prints(padd(state_mes, pos_state), state_message);
+	}
+	// < 초기 스파이스 >
+	else if (backbuf[curr.row][curr.column] == '5') {
+		char state_message[] = "건물 : 스파이스";
+		prints(padd(state_mes, pos_state), state_message);
+	}
+	// < 바위 >
+	else if (backbuf[curr.row][curr.column] == 'R') {
+		char state_message[] = "건물 : 바위";
+		prints(padd(state_mes, pos_state), state_message);
+	}
+	// < 아군 하베스터 >
+	else if (backbuf[curr.row][curr.column] == 'H' && curr.row == 14 && curr.column == 1) {
+		char state_message[] = "유닛 : 아군 하베스터";
+		prints(padd(state_mes, pos_state), state_message);
+	}
+	// < 적군 하베스터 >
+	else if (backbuf[curr.row][curr.column] == 'H' && curr.row == 3 && curr.column == 58) {
+		char state_message[] = "유닛 : 아군 하베스터";
+		prints(padd(state_mes, pos_state), state_message);
+	}
+	// < 샌드웜 1 >
+	else if (backbuf[curr.row][curr.column] == 'H' && curr.row == 2 && curr.column == 4) {
+		char state_message[] = "유닛 : 샌드웜 1";
+		prints(padd(state_mes, pos_state), state_message);
+	}
+	// < 샌드웜 2 >
+	else if (backbuf[curr.row][curr.column] == 'H' && curr.row == 12 && curr.column == 55) {
+		char state_message[] = "유닛 : 샌드웜 2";
 		prints(padd(state_mes, pos_state), state_message);
 	}
 
-
-	
 }
 
 // [ ESC 키를 눌렀을 때 ]
 void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH]) { 
 	
+
 }

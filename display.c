@@ -26,8 +26,11 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
 void display_cursor(CURSOR cursor);
 void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]);
 void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]);
-void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], 
-	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor);
+
+
+// =================================== [ 건물 ] ======================================= //
+
+// ==== [ 구조체로 건물 선언 ] ==== //
 
 // [ 아군 본진 BASE ]
 OBJECT_BUILDING f_base = {
@@ -106,37 +109,7 @@ OBJECT_BUILDING rock_4 = {
 	.layer = 0
 };
 
-//  ==  움직이는 애들  ==
-
-
-// [ 샌드웜 ]
-OBJECT_SAMPLE sandworm_1 = {
-	.pos = {2, 4},
-	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
-	.repr = 'W',
-	.move_period = 2500,
-	.next_move_time = 2500,
-	.layer = 1
-};
-
-OBJECT_SAMPLE sandworm_2 = {
-	.pos = {12, 55},
-	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
-	.repr = 'W',
-	.move_period = 2500,
-	.next_move_time = 2500,
-	.layer = 1
-};
-
-// [ 아군 하베스터 ]
-
-
-
-// [ 적군 하베스터 ]
-
-
-
-
+// ==== [ 함수로 건물 출력 ] ==== //
 
 // [ 아군 본진 출력 함수 ]
 void p_f_base(OBJECT_BUILDING fb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
@@ -202,7 +175,7 @@ void p_rock_4(OBJECT_BUILDING r4, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 
 
 // [ 모든 건물 출력 함수 ]
-void building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+void p_building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 
 	p_f_base(f_base, map); // 아군 본진
 
@@ -219,11 +192,83 @@ void building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 	p_rock_3(rock_3, map); // 바위 3
 	p_rock_4(rock_4, map); // 바위 4
 	
-
-
-
-
 }
+
+
+// =================================== [ 유닛 ] ======================================= //
+
+// ==== [ 구조체로 유닛 선언 ] ==== //
+
+// [ 샌드웜 ]
+OBJECT_SAMPLE sandworm_1 = {
+	.pos = {2, 4},
+	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
+	.repr = 'W',
+	.move_period = 2500,
+	.next_move_time = 2500,
+	.layer = 1
+};
+
+OBJECT_SAMPLE sandworm_2 = {
+	.pos = {12, 55},
+	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
+	.repr = 'W',
+	.move_period = 2500,
+	.next_move_time = 2500,
+	.layer = 1
+};
+
+// [ 아군 하베스터 ]
+OBJECT_SAMPLE f_hav = {
+	.pos = {14, 1},
+	.dest = {12, 1}, // 스파이스 위치로 바꿔야함
+	.repr = 'H',
+	.move_period = 2000,
+	.next_move_time = 2000,
+	.layer = 1
+};
+
+
+// [ 적군 하베스터 ]
+OBJECT_SAMPLE e_hav = {
+	.pos = {3, 58},
+	.dest = {5, 58}, // 스파이스 위치로 바꿔야함
+	.repr = 'H',
+	.move_period = 2000,
+	.next_move_time = 2000,
+	.layer = 1
+};
+
+// ==== [ 함수로 유닛 출력 ] ==== //
+
+// [ 아군 하베스터 출력 함수 ]
+void p_f_hav(OBJECT_SAMPLE f_hav, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	map[1][f_hav.pos.row][f_hav.pos.column] = f_hav.repr;
+}
+// [ 적군 하베스터 출력 함수 ]
+void p_e_hav(OBJECT_SAMPLE e_hav, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	map[1][e_hav.pos.row][e_hav.pos.column] = e_hav.repr;
+}
+
+// [ 샌드웜 1 출력 함수 ]
+void p_sandworm_1(OBJECT_SAMPLE sandworm_1, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	map[1][sandworm_1.pos.row][sandworm_1.pos.column] = sandworm_1.repr;
+}
+
+// [샌드웜 2 출력 함수 ]
+void p_sandworm_2(OBJECT_SAMPLE sandworm_2, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	map[1][sandworm_2.pos.row][sandworm_2.pos.column] = sandworm_2.repr;
+}
+
+// [ 모든 유닛 출력 함수 ]
+void p_unit(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	p_f_hav(f_hav, map);
+	p_e_hav(e_hav, map);
+	p_sandworm_1(sandworm_1, map);
+	p_sandworm_2(sandworm_2, map);
+}
+
+// =================================== [ DISPLAY ] ======================================= //
 
 void display(
 	RESOURCE resource,
@@ -235,7 +280,8 @@ void display(
 	display_map(map);
 	display_cursor(cursor);
 	// NEW FUNC
-	building(map);
+	p_building(map);
+	p_unit(map);
 	display_state_map(state_map);
 	// display_system_message()
 	// display_object_info()
@@ -273,6 +319,8 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 			if (frontbuf[i][j] != backbuf[i][j]) {
 				POSITION pos = { i, j };
 				
+				// === [ 건물 ] === //
+				
 				// [ 아군 본진 ]
 				if (backbuf[i][j] == 'B' && (i == 16 || i == 15) && (j == 1 || j == 2)) {
 					// < 파란색 배경 >
@@ -308,11 +356,37 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 					colorbuf[i][j] = COLOR_DEFAULT;
 				}
 
+				// ==== [ 유닛 ] ====
+
+				// < 아군 하베스터 >
+				else if (backbuf[i][j] == 'H' && i == 14 && j == 1) {
+					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 16);
+					colorbuf[i][j] = COLOR_DEFAULT + 16;
+				}
+
+				// < 적군 하베스터 >
+				else if (backbuf[i][j] == 'H' && i == 3 && j == 58) {
+					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 64);
+					colorbuf[i][j] = COLOR_DEFAULT + 64;
+				}
+
+				// < 샌드웜 1 >
+				else if (backbuf[i][j] == 'W' && i == 2 && j == 4) {
+					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 200); // 색은 아직 미지정
+					colorbuf[i][j] = COLOR_DEFAULT + 200;
+				}
+
+				// < 샌드웜 2 >
+				else if (backbuf[i][j] == 'W' && i == 12 && j == 55) {
+					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 200); // 색은 아직 미지정
+					colorbuf[i][j] = COLOR_DEFAULT + 200;
+				}
+
+				// < 기타 >
 				else {
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_RESOURCE);
 					colorbuf[i][j] = COLOR_RESOURCE;
 				}
-
 			}
 			frontbuf[i][j] = backbuf[i][j];
 		}
@@ -335,6 +409,7 @@ void display_cursor(CURSOR cursor) {
 	printc(padd(map_pos, curr), ch, COLOR_BLACK);
 }	
 
+
 // [ 상태 & 명령창 기본 틀 함수 ] 
 void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]) {
 	for (int i = 0; i < STATE_HEIGHT; i++) {
@@ -345,6 +420,7 @@ void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][
 		}
 	}
 }
+
 
 // [ 상태 & 명령창 그리기 함수 ]
 void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
@@ -357,36 +433,46 @@ void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 				if (state_backbuf[i][j] == '#') {
 					printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_RESOURCE);
 				}
-				else {
-					printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_BLACK);
-				}
 			}
 			state_frontbuf[i][j] = state_backbuf[i][j];
 		}
 	}
 }
 
+
 // [ 스페이스바를 눌렀을 때 ]
 void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], 
 	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor) {
 	POSITION prev = cursor.previous;
 	POSITION curr = cursor.current;
-	POSITION pos = { 0, 1 };
+	POSITION pos_state = { 0, 1 };
 
-	// 상태 & 명령창 초기화
-	display_state_map(state_map);
-
-	// 상태 & 명령 출력
+	// [ 상태 & 명령창 초기화 ]
+	for (int i = 1; i < STATE_HEIGHT - 1; i++) {
+		for (int j = 1; j < STATE_WIDTH - 1; j++) {
+			POSITION pos = { i, j }; 
+			prints(padd(state_pos, pos), " ");
+		}
+	}
+	
+	// [ 상태 & 명령 출력 ]
+	// < 빈 지형 >
 	if (backbuf[curr.row][curr.column] == ' ') {
 		char state_message[100] = "지형 : 사막 지형";
-		prints(padd(state_mes, pos), state_message);
+		prints(padd(state_mes, pos_state), state_message);
 	}
+	// < 아군 본진 >
 	else if (backbuf[curr.row][curr.column] == 'B' && \
-		(curr.row == 1 || curr.row == 2) && (curr.column == 57 || curr.column == 58)) {
-		char state_message[100] = "건물 : 적군 본진";
-		prints(padd(state_mes, pos), state_message);
+		(curr.row == 16 || curr.row == 15) && (curr.column == 1 || curr.column == 2)) {
+		char state_message[100] = "건물 : 아군 본진";
+		prints(padd(state_mes, pos_state), state_message);
 	}
 
 
+	
+}
+
+// [ ESC 키를 눌렀을 때 ]
+void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH]) { 
 	
 }

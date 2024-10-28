@@ -12,6 +12,7 @@ void cursor_move(DIRECTION dir, int move);
 void sample_obj_move(void);
 POSITION sample_obj_next_position(void);
 
+
 /* ================= control =================== */
 int sys_clock = 0;		// system-wide clock(ms)
 CURSOR cursor = { { 1, 1 }, {1, 1} };
@@ -91,8 +92,8 @@ int main(void) {
 			// 방향키 외의 입력
 			switch (key) {
 			case k_quit: outro();
-			case k_space: state_spacebar(map, state_map, cursor);// 행동 추가 해야됨.
-			case k_esc:   // 행동 추가 해야됨.
+			case k_esc: 
+			case k_space: state_spacebar(map, state_map, cursor);
 			case k_none:
 			case k_undef:
 			default: break;
@@ -160,12 +161,12 @@ void init(void) {
 		}
 	}
 	
-
-
-
 	// object sample
 	map[1][obj.pos.row][obj.pos.column] = 'o';
+	
 }
+
+
 
 // (가능하다면) 지정한 방향으로 커서 이동
 void cursor_move(DIRECTION dir, int move) {

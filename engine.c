@@ -55,7 +55,7 @@ int main(void) {
 		KEY key = get_key();
 
 		// sys_clock값에 따라 커서 여러칸 이동 변수 초기화
-		if (sys_clock % 102 == 0) {
+		if (sys_clock % 90 == 0) {
 			move_count = 0; // 커서가 1칸 움직이는지 3칸 움직이는지 확인
 			for (int i = 0; i < 2; i++) {
 				move_check[i] = 0; // 3칸 움직이는 커서일 때, 동일한 방향키를 두번 눌렀는지 확인
@@ -92,8 +92,13 @@ int main(void) {
 			// 방향키 외의 입력
 			switch (key) {
 			case k_quit: outro();
-			case k_esc: //state_esc(state_map);
+			
+			case k_esc: state_esc(state_map);
+				break;
+			
 			case k_space: state_spacebar(map, state_map, cursor);
+				break;
+			
 			case k_none:
 			case k_undef:
 			default: break;

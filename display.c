@@ -373,14 +373,14 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 
 				// < »÷µå¿ú 1 >
 				else if (backbuf[i][j] == 'W' && i == 2 && j == 4) {
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 200); // »öÀº ¾ÆÁ÷ ¹ÌÁöÁ¤
-					colorbuf[i][j] = COLOR_DEFAULT + 200;
+					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 96); // »öÀº ¾ÆÁ÷ ¹ÌÁöÁ¤
+					colorbuf[i][j] = COLOR_DEFAULT + 96;
 				}
 
 				// < »÷µå¿ú 2 >
 				else if (backbuf[i][j] == 'W' && i == 12 && j == 55) {
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 200); // »öÀº ¾ÆÁ÷ ¹ÌÁöÁ¤
-					colorbuf[i][j] = COLOR_DEFAULT + 200;
+					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 96); // »öÀº ¾ÆÁ÷ ¹ÌÁöÁ¤
+					colorbuf[i][j] = COLOR_DEFAULT + 96;
 				}
 
 				// < ±âÅ¸ >
@@ -434,6 +434,10 @@ void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 				if (state_backbuf[i][j] == '#') {
 					printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_RESOURCE);
 				}
+				else if (state_backbuf[i][j] = ' ') {
+					printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_BLACK);
+				}
+				
 			}
 			state_frontbuf[i][j] = state_backbuf[i][j];
 		}
@@ -452,7 +456,7 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 	for (int i = 1; i < STATE_HEIGHT - 1; i++) {
 		for (int j = 1; j < STATE_WIDTH - 1; j++) {
 			POSITION pos = { i, j }; 
-			prints(padd(state_pos, pos), " ");
+			printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_BLACK);
 		}
 	}
 	
@@ -507,12 +511,12 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 		prints(padd(state_mes, pos_state), state_message);
 	}
 	// < »÷µå¿ú 1 >
-	else if (backbuf[curr.row][curr.column] == 'H' && curr.row == 2 && curr.column == 4) {
+	else if (backbuf[curr.row][curr.column] == 'W' && curr.row == 2 && curr.column == 4) {
 		char state_message[] = "À¯´Ö : »÷µå¿ú 1";
 		prints(padd(state_mes, pos_state), state_message);
 	}
 	// < »÷µå¿ú 2 >
-	else if (backbuf[curr.row][curr.column] == 'H' && curr.row == 12 && curr.column == 55) {
+	else if (backbuf[curr.row][curr.column] == 'W' && curr.row == 12 && curr.column == 55) {
 		char state_message[] = "À¯´Ö : »÷µå¿ú 2";
 		prints(padd(state_mes, pos_state), state_message);
 	}
@@ -521,6 +525,11 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 
 // [ ESC Å°¸¦ ´­·¶À» ¶§ ]
 void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH]) { 
-	
+	for (int i = 1; i < STATE_HEIGHT - 1; i++) {
+		for (int j = 1; j < STATE_WIDTH - 1; j++) {
+			POSITION pos = { i, j };
+			printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_BLACK);
+		}
+	}
 
 }

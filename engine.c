@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <assert.h>
+#include <math.h>
 #include "common.h"
 #include "io.h"
 #include "display.h"
@@ -321,13 +322,13 @@ POSITION sw1_next_pos(void) {
 	// [ 목적지는 가장 가까운 유닛 ]
 	
 	// 가장 가까운 유닛을 찾아서 그 유닛의 행렬값을 new_dest에 지정
-	int close_i = MAP_HEIGHT - 2, close_j = MAP_WIDTH - 2;
+	double check_close = 61.0;
 	int move_i = 0, move_j = 0;
 	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
 		for (int j = 1; j < MAP_WIDTH - 1; j++) {
 			if (map[1][i][j] == 'H' || map[1][i][j] == 'T' || map[1][i][j] == 'S' || map[1][i][j] == 'F') {
-				if (abs(sw1_obj.pos.row - i) < close_i && abs(sw1_obj.pos.column - j) < close_j) {
-					close_i = abs(sw1_obj.pos.row - i), close_j = abs(sw1_obj.pos.row - j);
+				if (sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2)) < check_close) {
+					check_close = sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2));
 					move_i = i, move_j = j;
 				}
 			}

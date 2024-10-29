@@ -425,12 +425,12 @@ POSITION sw1_next_pos(void) {
 void sw1_move(void) {
 	// 움직이는 주기
 	if (sys_clock <= sw1_obj.next_move_time) {
-		return;
+		map[1][sw1_obj.pos.row][sw1_obj.pos.column] = -1;
+		sw1_obj.pos = sw1_next_pos();
+		map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr;
 	}
 	// 샌드웜(1) layer1 (map[1])에 저장
-	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = -1;
-	sw1_obj.pos = sw1_next_pos();
-	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr;
+	
 	
 	sw1_obj.next_move_time = sys_clock + sw1_obj.move_period;
 }

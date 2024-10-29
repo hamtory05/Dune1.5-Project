@@ -323,7 +323,7 @@ POSITION sw1_next_pos(void) {
 	
 	// 가장 가까운 유닛을 찾아서 그 유닛의 행렬값을 new_dest에 지정
 	double check_close = 61.0;
-	int move_i = 0, move_j = 0;
+	int move_i = 2, move_j = 4;
 	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
 		for (int j = 1; j < MAP_WIDTH - 1; j++) {
 			if (map[1][i][j] == 'H' || map[1][i][j] == 'T' || map[1][i][j] == 'S' || map[1][i][j] == 'F') {

@@ -177,22 +177,15 @@ void p_rock_4(OBJECT_BUILDING r4, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 
 // [ 모든 건물 출력 함수 ]
 void p_building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-
 	p_f_base(f_base, map); // 아군 본진
-
 	p_e_base(e_base, map); // 적군 본진
-
 	p_f_plate(f_plate, map); // 아군 장판
-
 	p_e_plate(e_plate, map); // 적군 장판
-
 	p_start_spice(start_spice, map); // 초기 스파이스 매장지 아군 1 적군 1
-
 	p_rock_1(rock_1, map); // 바위 1 
 	p_rock_2(rock_2, map); // 바위 2
 	p_rock_3(rock_3, map); // 바위 3
 	p_rock_4(rock_4, map); // 바위 4
-	
 }
 
 
@@ -240,7 +233,7 @@ void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP
 
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 	project(map, backbuf);
-	
+
 	for (int i = 0; i < MAP_HEIGHT; i++) {
 		for (int j = 0; j < MAP_WIDTH; j++) {
 			if (frontbuf[i][j] != backbuf[i][j]) {
@@ -297,14 +290,8 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 					colorbuf[i][j] = COLOR_DEFAULT + 64;
 				}
 
-				// < 샌드웜 1 >
-				else if (backbuf[i][j] == 'W' && i == 2 && j == 4) {
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 96); // 색은 아직 미지정
-					colorbuf[i][j] = COLOR_DEFAULT + 96;
-				}
-
-				// < 샌드웜 2 >
-				else if (backbuf[i][j] == 'W' && i == 12 && j == 55) {
+				// < 샌드웜 >
+				else if (backbuf[i][j] == 'W') {
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 96); // 색은 아직 미지정
 					colorbuf[i][j] = COLOR_DEFAULT + 96;
 				}
@@ -374,9 +361,8 @@ void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 // [ 스페이스바를 눌렀을 때 ]
 void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], 
 	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor) {
-	POSITION prev = cursor.previous;
 	POSITION curr = cursor.current;
-	POSITION pos_state = { 0, 1 };
+	POSITION pos_state = { 0, 1 }; 
 
 	// [ 상태 & 명령창 초기화 ]
 	for (int i = 1; i < STATE_HEIGHT - 1; i++) {
@@ -438,12 +424,12 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 	}
 	// < 샌드웜 1 >
 	else if (backbuf[curr.row][curr.column] == 'W' && curr.row == 2 && curr.column == 4) {
-		char state_message[] = "유닛 : 샌드웜 1";
+		char state_message[] = "유닛 : 샌드웜(1)";
 		prints(padd(state_mes, pos_state), state_message);
 	}
 	// < 샌드웜 2 >
 	else if (backbuf[curr.row][curr.column] == 'W' && curr.row == 12 && curr.column == 55) {
-		char state_message[] = "유닛 : 샌드웜 2";
+		char state_message[] = "유닛 : 샌드웜(2)";
 		prints(padd(state_mes, pos_state), state_message);
 	}
 

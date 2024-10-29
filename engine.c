@@ -12,6 +12,10 @@ void cursor_move(DIRECTION dir, int move);
 void sample_obj_move(void);
 POSITION sample_obj_next_position(void);
 
+POSITION sw1_next_pos(void);
+void sw1_move(void);
+POSITION sw2_next_pos(void);
+void sw2_move(void);
 
 /* ================= control =================== */
 int sys_clock = 0;		// system-wide clock(ms)
@@ -145,6 +149,7 @@ int main(void) {
 	
 		// 샘플 오브젝트 동작
 		sample_obj_move();
+		sw1_move();
 
 		// 화면 출력
 		display(resource, map, cursor, state_map);
@@ -204,15 +209,16 @@ void init(void) {
 		}
 	}
 	
+	// 시스템 기본 틀
+
 	// object sample
 	map[1][obj.pos.row][obj.pos.column] = 'o';
 
 	// [ 유닛 오브젝트 ]
-	map[1][f_hav_obj.pos.row][f_hav_obj.pos.column] = f_hav_obj.repr;
-	map[1][e_hav_obj.pos.row][e_hav_obj.pos.column] = e_hav_obj.repr;
-	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr;
-	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = sw2_obj.repr;
-	
+	map[1][f_hav_obj.pos.row][f_hav_obj.pos.column] = f_hav_obj.repr; // 아군 하베스터
+	map[1][e_hav_obj.pos.row][e_hav_obj.pos.column] = e_hav_obj.repr; // 적군 하베스터 
+	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr; // 샌드웜 1
+	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = sw2_obj.repr; // 샌드웜 2
 }
 
 
@@ -298,11 +304,197 @@ void sample_obj_move(void) {
 	obj.next_move_time = sys_clock + obj.move_period;
 }
 
-// [ 샌드웜 ]
 
 
+// [ 샌드웜 (1) ]
+
+POSITION sw1_next_pos(void) {
+	// 현재 위치와 목적지를 비교해서 이동 방향 결정	
+	POSITION diff = psub(sw1_obj.dest, sw1_obj.pos);
+	DIRECTION dir;
+
+	// 목적지 도착. 지금은 단순히 원래 자리로 왕복
+	if (diff.row == 0 && diff.column == 0) {
+		return obj.pos;
+	}
+
+	// [ 목적지는 가장 가까운 유닛 ]
+	
+	// 가장 가까운 유닛을 찾아서 그 유닛의 좌표값을 dest에 지정. (같은 샌드웜끼리는 제외)
+	int close_i = MAP_HEIGHT - 1, close_j = MAP_WIDTH - 1;
+	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
+		for (int j = 1; j < MAP_WIDTH - 1; j++) {
+			// 하베스터와 가장 가깝다고 가정하고, 실제로 하베스터가 가장 가까우면
+			// 하베스터한테 이동, 다른 유닛이 더 가까우면 다른 유닛한테 이동
+			
+			// [ 샌드웜 --> 하베스터 ]
+			if (map[1][i][j] == 'H') {
+				if (abs(sw1_obj.pos.row - i) < close_i && abs(sw1_obj.pos.column - j) < close_j) {
+					close_i = sw1_obj.pos.row - i, close_j = sw1_obj.pos.row - j;
+					POSITION new_dest = { i, j };
+					sw1_obj.dest = new_dest;
+				}
+			}
+			// [ 샌드웜 --> 프레멘 ]
+			else if (map[1][i][j] == 'F') {
+				if (abs(sw1_obj.pos.row - i) < close_i && abs(sw1_obj.pos.column - j) < close_j) {
+					close_i = sw1_obj.pos.row - i, close_j = sw1_obj.pos.row - j;
+					POSITION new_dest = { i, j };
+					sw1_obj.dest = new_dest;
+				}
+			}
+			// [ 샌드웜 --> 보병 ]
+			else if (map[1][i][j] == 'S') {
+				if (abs(sw1_obj.pos.row - i) < close_i && abs(sw1_obj.pos.column - j) < close_j) {
+					close_i = sw1_obj.pos.row - i, close_j = sw1_obj.pos.row - j;
+					POSITION new_dest = { i, j };
+					sw1_obj.dest = new_dest;
+				}
+			}
+			// [ 샌드웜 --> 투사 ]
+			else if (map[1][i][j] == 'F') {
+				if (abs(sw1_obj.pos.row - i) < close_i && abs(sw1_obj.pos.column - j) < close_j) {
+					close_i = sw1_obj.pos.row - i, close_j = sw1_obj.pos.row - j;
+					POSITION new_dest = { i, j };
+					sw1_obj.dest = new_dest;
+				}
+			}
+			// [ 샌드웜 --> 중전차 ]
+			else if (map[1][i][j] == 'T') {
+				if (abs(sw1_obj.pos.row - i) < close_i && abs(sw1_obj.pos.column - j) < close_j) {
+					close_i = sw1_obj.pos.row - i, close_j = sw1_obj.pos.row - j;
+					POSITION new_dest = { i, j };
+					sw1_obj.dest = new_dest;
+				}
+			}
+			// 유닛이 없을 때는 dest값을 원래 초기 값으로 초기화
+			else {
+				POSITION new_dest = { MAP_HEIGHT - 2, MAP_WIDTH - 2 };
+				sw1_obj.dest = new_dest;
+			}
+		}
+	}
+
+	// 가로축, 세로축 거리를 비교해서 더 먼 쪽 축으로 이동
+	if (abs(diff.row) >= abs(diff.column)) {
+		dir = (diff.row >= 0) ? d_down : d_up;
+	}
+	else {
+		dir = (diff.column >= 0) ? d_right : d_left;
+	}
+
+	// 유닛과 만났을 때 (겹쳐졌을 때) 유닛과 전투 (잡아먹기)
+	POSITION next_pos = pmove(sw1_obj.pos, dir);
+	if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] < 0) {
+
+		return next_pos;
+	}
+	// [ 아군 하베스터와 만났을 때 (미완성) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'H') {
+		
+		f_hav_obj.repr = ' ';
+		return next_pos;
+	} 
+	// [ 적군 하베스터와 만났을 때 (미완성) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'H' ) {
+
+		e_hav_obj.repr = ' ';
+		return next_pos;
+	}
+	// [ 프레멘과 만났을 때 (아직 구현 X) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'F') {
+
+		return next_pos;
+	}
+	// [ 투사와 만났을 때 (아직 구현 X) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'F') {
+
+		return next_pos;
+	}
+	// [ 보병 만났을 때 (아직 구현 X) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'S') {
+
+		return next_pos;
+	}
+	// [ 중전차 만났을 때 (아직 구현 X) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'T') {
+
+		return next_pos;
+	}
+	// [ 바위와 만났을 때 피해가기 (미완성) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[0][next_pos.row][next_pos.column] == 'R') {
+		
+		return sw1_obj.pos;
+	}
+	// [ 샌드웜(2)와 만났을 때 피해가기 (미완성) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'W') {
+
+		return sw1_obj.pos;
+	}
+	
 
 
+	// 10% 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
+	int r = rand() % 100 + 1;
+	if (r <= 10) {
+		map[1][sw1_obj.pos.row][sw1_obj.pos.column] = '5';
+	}
+
+}
+
+void sw1_move(void) {
+	// 움직이는 주기
+	if (sys_clock <= sw1_obj.next_move_time) {
+		return;
+	}
+	// 샌드웜(1) layer1 (map[1])에 저장
+	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = -1;
+	sw1_obj.pos = sw1_next_pos();
+	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr;
+	
+	sw1_obj.next_move_time = sys_clock + sw1_obj.move_period;
+}
+
+// [ 샌드웜 (2) ]
+
+POSITION sw2_next_pos(void) {
+
+	// [ 목적지는 가장 가까운 유닛 ]
+
+		// 가장 가까운 유닛을 찾아서 그 유닛의 좌표값을 dest에 지정. (같은 샌드웜끼리는 제외)
+
+		// 유닛이 없을 때는 dest값을 원래 초기 값으로 초기화
+
+		// 유닛과 만났을 때 (겹쳐졌을 때) 유닛과 전투 (잡아먹기)
+
+		// 10% 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
+
+}
+
+void sw2_move(void) {
+	// 움직이는 주기
+
+	// 샌드웜(2) layer1 (map[1])에 저장
+
+}
 
 
 

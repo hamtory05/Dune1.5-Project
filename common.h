@@ -16,6 +16,8 @@
 #define STATE_WIDTH 50
 #define STATE_HEIGHT 18
 
+
+
 /* ================= 위치와 방향 =================== */
 // 맵에서 위치를 나타내는 구조체
 typedef struct {

@@ -24,7 +24,7 @@ CURSOR cursor = { { 1, 1 }, {1, 1} };
 
 int move_count = 0;
 int move_check[2] = { 0 };
-
+char spice_number[9] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
 /* ================= game data =================== */
 char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH] = { 0 };  // 2, 16, 60
@@ -76,7 +76,7 @@ OBJECT_SAMPLE sw1_obj = {
 // [ 샌드웜 2 ]
 OBJECT_SAMPLE sw2_obj = {
 	.pos = {12, 55},
-	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
+	.dest = {1, 1},
 	.repr = 'W',
 	.move_period = 2500,
 	.next_move_time = 2500
@@ -151,6 +151,7 @@ int main(void) {
 		// 샘플 오브젝트 동작
 		sample_obj_move();
 		sw1_move();
+		sw2_move();
 
 		// 화면 출력
 		display(resource, map, cursor, state_map);
@@ -412,14 +413,6 @@ POSITION sw1_next_pos(void) {
 
 		return sw1_obj.pos;
 	}
-	
-
-
-	// 10% 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
-	int r = rand() % 100 + 1;
-	if (r <= 10) {
-		map[1][sw1_obj.pos.row][sw1_obj.pos.column] = '5';
-	}
 
 }
 
@@ -430,6 +423,13 @@ void sw1_move(void) {
 	}
 	// 샌드웜(1) layer1 (map[1])에 저장
 	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = -1;
+
+	// 10% 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
+	int r = rand() % 100 + 1;
+	if (r <= 10) {
+		map[0][sw1_obj.pos.row][sw1_obj.pos.column] = '5';
+	}
+
 	sw1_obj.pos = sw1_next_pos();
 	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr;
 	
@@ -439,24 +439,128 @@ void sw1_move(void) {
 // [ 샌드웜 (2) ]
 
 POSITION sw2_next_pos(void) {
+	// 현재 위치와 목적지를 비교해서 이동 방향 결정	
+	POSITION diff = psub(sw2_obj.dest, sw2_obj.pos);
+	DIRECTION dir;
+
+	// 목적지 도착. 지금은 단순히 원래 자리로 왕복
+	if (diff.row == 0 && diff.column == 0) {
+		return obj.pos;
+	}
 
 	// [ 목적지는 가장 가까운 유닛 ]
 
-		// 가장 가까운 유닛을 찾아서 그 유닛의 좌표값을 dest에 지정. (같은 샌드웜끼리는 제외)
+	// 가장 가까운 유닛을 찾아서 그 유닛의 행렬값을 new_dest에 지정
+	double check_close = 61.0;
+	int move_i = 2, move_j = 4;
+	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
+		for (int j = 1; j < MAP_WIDTH - 1; j++) {
+			if (map[1][i][j] == 'H' || map[1][i][j] == 'T' || map[1][i][j] == 'S' || map[1][i][j] == 'F') {
+				if (sqrt(pow(i - sw2_obj.pos.row, 2) + pow(j - sw2_obj.pos.column, 2)) < check_close) {
+					check_close = sqrt(pow(i - sw2_obj.pos.row, 2) + pow(j - sw2_obj.pos.column, 2));
+					move_i = i, move_j = j;
+				}
+			}
+		}
+	}
+	POSITION new_dest = { move_i, move_j };
+	sw2_obj.dest = new_dest;
 
-		// 유닛이 없을 때는 dest값을 원래 초기 값으로 초기화
 
-		// 유닛과 만났을 때 (겹쳐졌을 때) 유닛과 전투 (잡아먹기)
+	// 가로축, 세로축 거리를 비교해서 더 먼 쪽 축으로 이동
+	if (abs(diff.row) >= abs(diff.column)) {
+		dir = (diff.row >= 0) ? d_down : d_up;
+	}
+	else {
+		dir = (diff.column >= 0) ? d_right : d_left;
+	}
 
-		// 10% 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
+	// 유닛과 만났을 때 (겹쳐졌을 때) 유닛과 전투 (잡아먹기)
+	POSITION next_pos = pmove(sw2_obj.pos, dir);
+	if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] < 0) {
 
+		return next_pos;
+	}
+	// [ 아군 하베스터와 만났을 때 (미완성) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'H') {
+
+		f_hav_obj.repr = ' ';
+		return next_pos;
+	}
+	// [ 적군 하베스터와 만났을 때 (미완성) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'H') {
+
+		e_hav_obj.repr = ' ';
+		return next_pos;
+	}
+	// [ 프레멘과 만났을 때 (아직 구현 X) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'F') {
+
+		return next_pos;
+	}
+	// [ 투사와 만났을 때 (아직 구현 X) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'F') {
+
+		return next_pos;
+	}
+	// [ 보병 만났을 때 (아직 구현 X) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'S') {
+
+		return next_pos;
+	}
+	// [ 중전차 만났을 때 (아직 구현 X) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'T') {
+
+		return next_pos;
+	}
+	// [ 바위와 만났을 때 피해가기 (미완성) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[0][next_pos.row][next_pos.column] == 'R') {
+
+		return sw2_obj.pos;
+	}
+	// [ 샌드웜(2)와 만났을 때 피해가기 (미완성) ]
+	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[1][next_pos.row][next_pos.column] == 'W') {
+
+		return sw2_obj.pos;
+	}
 }
 
 void sw2_move(void) {
 	// 움직이는 주기
-
+	if (sys_clock <= sw2_obj.next_move_time) {
+		return;
+	}
 	// 샌드웜(2) layer1 (map[1])에 저장
+	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = -1;
 
+	// 10% 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
+	int r = rand() % 199;
+	if (r < 9) {
+		map[0][sw2_obj.pos.row][sw2_obj.pos.column] = spice_number[r];
+	}
+
+	sw2_obj.pos = sw2_next_pos();
+	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = sw2_obj.repr;
+
+	sw2_obj.next_move_time = sys_clock + sw2_obj.move_period;
 }
 
 

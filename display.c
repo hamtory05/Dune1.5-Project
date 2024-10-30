@@ -263,7 +263,8 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 				}
 
 				// [ 스파이스 ]
-				else if (backbuf[i][j] == '5') {
+				else if (backbuf[i][j] == '1' || backbuf[i][j] == '2' || backbuf[i][j] == '3' || backbuf[i][j] == '4' || \
+					backbuf[i][j] == '5' || backbuf[i][j] == '6' || backbuf[i][j] == '7' || backbuf[i][j] == '8' || backbuf[i][j] == '9') {
 					// < 주황색 배경 >    아직 색 못 찾음
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 48);
 					colorbuf[i][j] = COLOR_DEFAULT + 48;

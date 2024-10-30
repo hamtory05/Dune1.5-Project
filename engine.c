@@ -425,9 +425,9 @@ void sw1_move(void) {
 	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = -1;
 
 	// 10% 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
-	int r = rand() % 100 + 1;
-	if (r <= 10) {
-		map[0][sw1_obj.pos.row][sw1_obj.pos.column] = '5';
+	int r = rand() % 199;
+	if (r < 9) {
+		map[0][sw1_obj.pos.row][sw1_obj.pos.column] = spice_number[r];
 	}
 
 	sw1_obj.pos = sw1_next_pos();

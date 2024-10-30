@@ -13,21 +13,39 @@ const POSITION resource_pos = { 0, 0 };
 const POSITION map_pos = { 1, 0 };
 const POSITION state_pos = { 1, 63 };
 const POSITION state_mes = { 2, 63 };
+const POSITION sysmes_pos = { 20, 0 };
+const POSITION order_pos = { 20, 63 };
+
+
 
 char backbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 char frontbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
+
 int colorbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
+
 char state_backbuf[STATE_HEIGHT][STATE_WIDTH] = { 0 };
 char state_frontbuf[STATE_HEIGHT][STATE_WIDTH] = { 0 };
+
+char sysmes_backbuf[SYSMES_HEIGHT][SYSMES_WIDTH] = { 0 };
+char sysmes_frontbuf[SYSMES_HEIGHT][SYSMES_WIDTH] = { 0 };
+
+char order_backbuf[ORDER_HEIGHT][ORDER_WIDTH] = { 0 };
+char order_frontbuf[ORDER_HEIGHT][ORDER_WIDTH] = { 0 };
 
 
 void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP_WIDTH]);
 void display_resource(RESOURCE resource);
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
 void display_cursor(CURSOR cursor);
+
 void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]);
 void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]);
 
+void sysmes_project(char src[SYSMES_HEIGHT][SYSMES_WIDTH], char dest[SYSMES_HEIGHT][SYSMES_WIDTH]);
+void display_sysmes_map(char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]);
+
+void order_project(char src[ORDER_HEIGHT][ORDER_WIDTH], char dest[ORDER_HEIGHT][ORDER_WIDTH]);
+void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]);
 
 // =================================== [ 건물 ] ======================================= //
 
@@ -195,7 +213,9 @@ void display(
 	RESOURCE resource,
 	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 	CURSOR cursor,
-	char state_map[STATE_HEIGHT][STATE_WIDTH])
+	char state_map[STATE_HEIGHT][STATE_WIDTH],
+	char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH],
+	char order_map[ORDER_HEIGHT][ORDER_WIDTH])
 {
 	display_resource(resource);
 	display_map(map);
@@ -203,6 +223,8 @@ void display(
 	// NEW FUNC
 	p_building(map);
 	display_state_map(state_map);
+	display_sysmes_map(sysmes_map);
+	display_order_map(order_map);
 	// display_system_message()
 	// display_object_info()
 	// display_commands()
@@ -325,7 +347,7 @@ void display_cursor(CURSOR cursor) {
 }	
 
 
-// [ 상태 & 명령창 기본 틀 함수 ] 
+// [ 상태창 기본 틀 함수 ] 
 void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]) {
 	for (int i = 0; i < STATE_HEIGHT; i++) {
 		for (int j = 0; j < STATE_WIDTH; j++) {
@@ -337,7 +359,7 @@ void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][
 }
 
 
-// [ 상태 & 명령창 그리기 함수 ]
+// [ 상태창 그리기 함수 ]
 void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 	state_project(state_map, state_backbuf);
 
@@ -348,9 +370,7 @@ void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 				if (state_backbuf[i][j] == '#') {
 					printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_RESOURCE);
 				}
-				else if (state_backbuf[i][j] = ' ') {
-					printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_BLACK);
-				}
+				
 				
 			}
 			state_frontbuf[i][j] = state_backbuf[i][j];
@@ -358,6 +378,65 @@ void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 	}
 }
 
+
+
+// [ 시스템창 기본 틀 함수 ]
+void sysmes_project(char src[SYSMES_HEIGHT][SYSMES_WIDTH], char dest[SYSMES_HEIGHT][SYSMES_WIDTH]) {
+	for (int i = 0; i < SYSMES_HEIGHT; i++) {
+		for (int j = 0; j < SYSMES_WIDTH; j++) {
+			if (src[i][j] >= 0) {
+				dest[i][j] = src[i][j];
+			}
+		}
+	}
+}
+
+// [ 시스템 창 그리기 함수 ]
+void display_sysmes_map(char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
+	sysmes_project(sysmes_map, sysmes_backbuf);
+
+	for (int i = 0; i < SYSMES_HEIGHT; i++) {
+		for (int j = 0; j < SYSMES_WIDTH; j++) {
+			if (sysmes_frontbuf[i][j] != sysmes_backbuf[i][j]) {
+				POSITION pos = { i, j };
+				if (sysmes_backbuf[i][j] == '#') {
+					printc(padd(sysmes_pos, pos), sysmes_backbuf[i][j], COLOR_RESOURCE);
+				}
+			}
+			sysmes_frontbuf[i][j] = sysmes_backbuf[i][j];
+		}
+	}
+}
+
+// [ 명령창 기본 틀 함수 ]
+void order_project(char src[ORDER_HEIGHT][ORDER_WIDTH], char dest[ORDER_HEIGHT][ORDER_WIDTH]) {
+	for (int i = 0; i < ORDER_HEIGHT; i++) {
+		for (int j = 0; j < ORDER_WIDTH; j++) {
+			if (src[i][j] >= 0) {
+				dest[i][j] = src[i][j];
+			}
+		}
+	}
+}
+
+// [ 명령창 그리기 함수 ]
+void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]) {
+	order_project(order_map, order_backbuf);
+
+	for (int i = 0; i < ORDER_HEIGHT; i++) {
+		for (int j = 0; j < ORDER_WIDTH; j++) {
+			if (order_frontbuf[i][j] != order_backbuf[i][j]) {
+				POSITION pos = { i, j };
+				if (order_backbuf[i][j] == '#') {
+					printc(padd(order_pos, pos), order_backbuf[i][j], COLOR_RESOURCE);
+				}
+				
+
+			}
+			order_frontbuf[i][j] = order_backbuf[i][j];
+		}
+	}
+}
 
 // [ 스페이스바를 눌렀을 때 ]
 void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], 

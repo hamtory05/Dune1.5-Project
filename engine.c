@@ -28,8 +28,9 @@ char spice_number[9] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
 /* ================= game data =================== */
 char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH] = { 0 };  // 2, 16, 60
-char state_map[STATE_HEIGHT][STATE_WIDTH] = { 0 }; // 16, 110
-
+char state_map[STATE_HEIGHT][STATE_WIDTH] = { 0 }; // 16, 50
+char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH] = { 0 }; // 6 60
+char order_map[ORDER_HEIGHT][ORDER_WIDTH] = { 0 }; // 6 60
 
 RESOURCE resource = {
 	.spice = 0,
@@ -91,7 +92,7 @@ int main(void) {
 
 	init();
 	intro();
-	display(resource, map, cursor, state_map);
+	display(resource, map, cursor, state_map, sysmes_map, order_map);
 
 	while (1) {
 		// loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인
@@ -149,12 +150,11 @@ int main(void) {
 		}
 	
 		// 샘플 오브젝트 동작
-		sample_obj_move();
 		sw1_move();
 		sw2_move();
 
 		// 화면 출력
-		display(resource, map, cursor, state_map);
+		display(resource, map, cursor, state_map, sysmes_map, order_map);
 		Sleep(TICK);
 		sys_clock += 10;
 		
@@ -197,7 +197,7 @@ void init(void) {
 		}
 	}
 
-	// 명렁 & 상태창 기본 틀
+	// [ 상태창 기본 틀 ]
 	for (int i = 0; i < STATE_WIDTH; i++) {
 		state_map[0][i] = '#';
 		state_map[STATE_HEIGHT - 1][i] = '#';
@@ -211,7 +211,35 @@ void init(void) {
 		}
 	}
 	
-	// 시스템 기본 틀
+	// [ 시스템 기본 틀 ]
+	for (int i = 0; i < SYSMES_WIDTH; i++) {
+		sysmes_map[0][i] = '#';
+		sysmes_map[SYSMES_HEIGHT - 1][i] = '#';
+	}
+
+	for (int i = 1; i < SYSMES_HEIGHT - 1; i++) {
+		sysmes_map[i][0] = '#';
+		sysmes_map[i][SYSMES_WIDTH - 1] = '#';
+		for (int j = 1; j < SYSMES_WIDTH - 1; j++) {
+			sysmes_map[i][j] = ' ';
+		}
+	}
+
+	// [ 명령창 기본 틀 ]
+	for (int i = 0; i < ORDER_WIDTH; i++) {
+		order_map[0][i] = '#';
+		order_map[ORDER_HEIGHT - 1][i] = '#';
+	}
+
+	for (int i = 1; i < ORDER_HEIGHT - 1; i++) {
+		order_map[i][0] = '#';
+		order_map[i][ORDER_WIDTH - 1] = '#';
+		for (int j = 1; j < ORDER_WIDTH - 1; j++) {
+			order_map[i][j] = ' ';
+		}
+	}
+
+
 
 	// object sample
 	map[1][obj.pos.row][obj.pos.column] = 'o';
@@ -425,7 +453,7 @@ void sw1_move(void) {
 	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = -1;
 
 	// 10% 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
-	int r = rand() % 199;
+	int r = rand() % 299;
 	if (r < 9) {
 		map[0][sw1_obj.pos.row][sw1_obj.pos.column] = spice_number[r];
 	}

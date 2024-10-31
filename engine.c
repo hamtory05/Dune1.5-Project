@@ -472,9 +472,36 @@ POSITION sw1_next_pos(void) {
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'W') {
 
+		// 샌드웜(2)가 위, 아래에 있을 때
+		if (sw1_obj.pos.column + 1 == next_pos.column || sw1_obj.pos.column - 1 == next_pos.column) {
+			// [ 오른쪽으로 갈 때가 빠른지 왼쪽으로 갈 때가 빠른지 비교 ]
+			double move_left = sqrt(pow((sw1_obj.pos.row - 1) - new_dest.row, 2) + pow(sw1_obj.pos.column - new_dest.column, 2));
+			double move_right = sqrt(pow((sw1_obj.pos.row + 1) - new_dest.row, 2) + pow(sw1_obj.pos.column - new_dest.column, 2));;
+			// [ 오른쪽으로 가기 ]
+			if (move_left < move_right) {
+				next_pos.row = next_pos.row + 1;
+			}
+			// [ 왼쪽으로 가기 ]
+			else {
+				next_pos.row = next_pos.row - 1;
+			}
+		}
+		// 샌드웜(2) 오른쪽, 왼쪽에 있을 때
+		else {
+			// [ 위로 갈 때가 빠른지 아래로 갈 때가 빠른지 비교 ]
+			double move_up = sqrt(pow(sw1_obj.pos.row - new_dest.row, 2) + pow(sw1_obj.pos.column - 1 - new_dest.column, 2));
+			double move_down = sqrt(pow(sw1_obj.pos.row - new_dest.row, 2) + pow((sw1_obj.pos.column + 1) - new_dest.column, 2));
+			// [ 위로 가기 ]
+			if (move_up < move_down) {
+				next_pos.column = next_pos.column + 1;
+			}
+			// [ 아래로 가기 ]
+			else {
+				next_pos.column = next_pos.column - 1;
+			}
+		}
 		return sw1_obj.pos;
 	}
-
 }
 
 void sw1_move(void) {
@@ -617,12 +644,12 @@ POSITION sw2_next_pos(void) {
 		}
 		return next_pos;
 	}
-	// [ 샌드웜(2)와 만났을 때 피해가기 (미완성) ]
+	// [ 샌드웜(1)과 만났을 때 피해가기 (미완성) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'W') {
-
-		return sw2_obj.pos;
+		// 샌드웜(1)이 피해갈거라 샌드웜(2)는 갈 길 가면 됨.
+		return next_pos;
 	}
 }
 

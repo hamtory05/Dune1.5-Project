@@ -18,10 +18,10 @@
 #define STATE_HEIGHT 18
 
 #define SYSMES_WIDTH 60
-#define SYSMES_HEIGHT 6
+#define SYSMES_HEIGHT 9
 
 #define ORDER_WIDTH 50
-#define ORDER_HEIGHT 6
+#define ORDER_HEIGHT 9
 
 
 /* ================= 위치와 방향 =================== */

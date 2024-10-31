@@ -34,9 +34,9 @@ char order_map[ORDER_HEIGHT][ORDER_WIDTH] = { 0 }; // 6 60
 
 RESOURCE resource = {
 	.spice = 0,
-	.spice_max = 0,
+	.spice_max = 5,
 	.population = 0,
-	.population_max = 0
+	.population_max = 50
 };
 
 OBJECT_SAMPLE obj = {
@@ -343,10 +343,7 @@ POSITION sw1_next_pos(void) {
 	POSITION diff = psub(sw1_obj.dest, sw1_obj.pos);
 	DIRECTION dir;
 
-	// 목적지 도착. 지금은 단순히 원래 자리로 왕복
-	if (diff.row == 0 && diff.column == 0) {
-		return obj.pos;
-	}
+	
 
 	// [ 목적지는 가장 가까운 유닛 ]
 	
@@ -375,6 +372,7 @@ POSITION sw1_next_pos(void) {
 		dir = (diff.column >= 0) ? d_right : d_left;
 	}
 
+
 	// 유닛과 만났을 때 (겹쳐졌을 때) 유닛과 전투 (잡아먹기)
 	POSITION next_pos = pmove(sw1_obj.pos, dir);
 	if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
@@ -383,6 +381,7 @@ POSITION sw1_next_pos(void) {
 
 		return next_pos;
 	}
+
 	// [ 아군 하베스터와 만났을 때 (미완성) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
@@ -391,6 +390,7 @@ POSITION sw1_next_pos(void) {
 		f_hav_obj.repr = ' ';
 		return next_pos;
 	} 
+
 	// [ 적군 하베스터와 만났을 때 (미완성) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
@@ -399,6 +399,7 @@ POSITION sw1_next_pos(void) {
 		e_hav_obj.repr = ' ';
 		return next_pos;
 	}
+
 	// [ 프레멘과 만났을 때 (아직 구현 X) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
@@ -406,6 +407,7 @@ POSITION sw1_next_pos(void) {
 
 		return next_pos;
 	}
+
 	// [ 투사와 만났을 때 (아직 구현 X) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
@@ -413,6 +415,7 @@ POSITION sw1_next_pos(void) {
 
 		return next_pos;
 	}
+
 	// [ 보병 만났을 때 (아직 구현 X) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
@@ -420,6 +423,7 @@ POSITION sw1_next_pos(void) {
 
 		return next_pos;
 	}
+
 	// [ 중전차 만났을 때 (아직 구현 X) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
@@ -427,13 +431,42 @@ POSITION sw1_next_pos(void) {
 
 		return next_pos;
 	}
+
 	// [ 바위와 만났을 때 피해가기 (미완성) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[0][next_pos.row][next_pos.column] == 'R') {
-		
-		return sw1_obj.pos;
+		// [ 바위가 위, 아래에 있을 때 ]
+		if (sw1_obj.pos.column + 1 == next_pos.column || sw1_obj.pos.column - 1 == next_pos.column) {
+			// [ 오른쪽으로 갈 때가 빠른지 왼쪽으로 갈 때가 빠른지 비교 ]
+			double move_left = sqrt(pow((sw1_obj.pos.row - 1) - new_dest.row, 2) + pow(sw1_obj.pos.column - new_dest.column, 2));
+			double move_right = sqrt(pow((sw1_obj.pos.row + 1) - new_dest.row, 2) + pow(sw1_obj.pos.column - new_dest.column, 2));;
+			// [ 오른쪽으로 가기 ]
+			if (move_left < move_right) {
+				next_pos.row = next_pos.row + 1;
+			}
+			// [ 왼쪽으로 가기 ]
+			else {
+				next_pos.row = next_pos.row - 1;
+			}
+		}
+		// 바위가 오른쪽, 왼쪽에 있을 때
+		else {
+			// [ 위로 갈 때가 빠른지 아래로 갈 때가 빠른지 비교 ]
+			double move_up = sqrt(pow(sw1_obj.pos.row - new_dest.row, 2) + pow(sw1_obj.pos.column - 1 - new_dest.column, 2));
+			double move_down = sqrt(pow(sw1_obj.pos.row - new_dest.row, 2) + pow((sw1_obj.pos.column + 1) - new_dest.column, 2));
+			// [ 위로 가기 ]
+			if (move_up < move_down) {
+				next_pos.column = next_pos.column + 1;
+			}
+			// [ 아래로 가기 ]
+			else {
+				next_pos.column = next_pos.column - 1;
+			}
+		}
+		return next_pos;
 	}
+
 	// [ 샌드웜(2)와 만났을 때 피해가기 (미완성) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
@@ -452,7 +485,7 @@ void sw1_move(void) {
 	// 샌드웜(1) layer1 (map[1])에 저장
 	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = -1;
 
-	// 10% 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
+	// 10/300 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
 	int r = rand() % 299;
 	if (r < 9) {
 		map[0][sw1_obj.pos.row][sw1_obj.pos.column] = spice_number[r];
@@ -460,7 +493,7 @@ void sw1_move(void) {
 
 	sw1_obj.pos = sw1_next_pos();
 	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr;
-	
+
 	sw1_obj.next_move_time = sys_clock + sw1_obj.move_period;
 }
 
@@ -471,16 +504,11 @@ POSITION sw2_next_pos(void) {
 	POSITION diff = psub(sw2_obj.dest, sw2_obj.pos);
 	DIRECTION dir;
 
-	// 목적지 도착. 지금은 단순히 원래 자리로 왕복
-	if (diff.row == 0 && diff.column == 0) {
-		return obj.pos;
-	}
-
 	// [ 목적지는 가장 가까운 유닛 ]
 
 	// 가장 가까운 유닛을 찾아서 그 유닛의 행렬값을 new_dest에 지정
 	double check_close = 61.0;
-	int move_i = 2, move_j = 4;
+	int move_i = 12, move_j = 55;
 	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
 		for (int j = 1; j < MAP_WIDTH - 1; j++) {
 			if (map[1][i][j] == 'H' || map[1][i][j] == 'T' || map[1][i][j] == 'S' || map[1][i][j] == 'F') {
@@ -559,8 +587,35 @@ POSITION sw2_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[0][next_pos.row][next_pos.column] == 'R') {
-
-		return sw2_obj.pos;
+		// [ 바위가 위, 아래에 있을 때 ]
+		if (sw2_obj.pos.column + 1 == next_pos.column || sw2_obj.pos.column - 1 == next_pos.column) {
+			// [ 오른쪽으로 갈 때가 빠른지 왼쪽으로 갈 때가 빠른지 비교 ]
+			double move_left = sqrt(pow((sw2_obj.pos.row - 1) - new_dest.row, 2) + pow(sw2_obj.pos.column - new_dest.column, 2));
+			double move_right = sqrt(pow((sw2_obj.pos.row + 1) - new_dest.row, 2) + pow(sw2_obj.pos.column - new_dest.column, 2));;
+			// [ 오른쪽으로 가기 ]
+			if (move_left < move_right) {
+				next_pos.row = next_pos.row + 1;
+			}
+			// [ 왼쪽으로 가기 ]
+			else {
+				next_pos.row = next_pos.row - 1;
+			}
+		}
+		// 바위가 오른쪽, 왼쪽에 있을 때
+		else {
+			// [ 위로 갈 때가 빠른지 아래로 갈 때가 빠른지 비교 ]
+			double move_up = sqrt(pow(sw2_obj.pos.row - new_dest.row, 2) + pow(sw2_obj.pos.column - 1 - new_dest.column, 2));
+			double move_down = sqrt(pow(sw2_obj.pos.row - new_dest.row, 2) + pow((sw2_obj.pos.column + 1) - new_dest.column, 2));
+			// [ 위로 가기 ]
+			if (move_up < move_down) {
+				next_pos.column = next_pos.column + 1;
+			}
+			// [ 아래로 가기 ]
+			else {
+				next_pos.column = next_pos.column - 1;
+			}
+		}
+		return next_pos;
 	}
 	// [ 샌드웜(2)와 만났을 때 피해가기 (미완성) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
@@ -579,8 +634,8 @@ void sw2_move(void) {
 	// 샌드웜(2) layer1 (map[1])에 저장
 	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = -1;
 
-	// 10% 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
-	int r = rand() % 199;
+	// 10/300 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
+	int r = rand() % 299;
 	if (r < 9) {
 		map[0][sw2_obj.pos.row][sw2_obj.pos.column] = spice_number[r];
 	}

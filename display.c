@@ -11,11 +11,14 @@
 // 출력할 내용들의 좌상단(topleft) 좌표
 const POSITION resource_pos = { 0, 0 };
 const POSITION map_pos = { 1, 0 };
+
 const POSITION state_pos = { 1, 63 };
 const POSITION state_mes = { 2, 63 };
-const POSITION sysmes_pos = { 20, 0 };
-const POSITION order_pos = { 20, 63 };
 
+const POSITION sysmes_pos = { 20, 0 };
+
+const POSITION order_pos = { 20, 63 };
+const POSITION order_mes = { 21, 63 };
 
 
 char backbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
@@ -443,6 +446,7 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor) {
 	POSITION curr = cursor.current;
 	POSITION pos_state = { 0, 1 }; 
+	POSITION pos_order = { 0, 1 };
 
 	// [ 상태 & 명령창 초기화 ]
 	for (int i = 1; i < STATE_HEIGHT - 1; i++) {
@@ -462,7 +466,9 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 	else if (backbuf[curr.row][curr.column] == 'B' && \
 		(curr.row == 16 || curr.row == 15) && (curr.column == 1 || curr.column == 2)) {
 		char state_message[] = "건물 : 아군 본진";
+		char order_message[] = "하베스터 생산 (Y / N)";
 		prints(padd(state_mes, pos_state), state_message);
+		prints(padd(order_mes, pos_order), order_message);
 	}
 	// < 적군 본진 >
 	else if (backbuf[curr.row][curr.column] == 'B' && \

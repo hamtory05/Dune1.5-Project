@@ -32,8 +32,9 @@ void display(
 void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor);
 
-void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH]);
+void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_HEIGHT][ORDER_WIDTH]);
 
+void press_h(RESOURCE resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
 
 // [ 건물 함수 ]
 void p_f_base(OBJECT_BUILDING fb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);	 // 아군 본진
@@ -46,5 +47,6 @@ void p_rock_2(OBJECT_BUILDING r2, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);	 //
 void p_rock_3(OBJECT_BUILDING r3, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);	 // 바위 3
 void p_rock_4(OBJECT_BUILDING r4, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);	 // 바위 4
 void p_building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);						 // 모든 건물 출력
+
 
 #endif

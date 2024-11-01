@@ -10,7 +10,7 @@
 /* ================= system parameters =================== */
 #define TICK 10		// time unit(ms)
 
-#define N_LAYER 2
+#define N_LAYER 3
 #define MAP_WIDTH	60
 #define MAP_HEIGHT	18
 
@@ -44,6 +44,7 @@ typedef enum {
 	k_quit,
 	k_space,
 	k_esc,
+	k_h,
 	k_undef, // 정의되지 않은 키 입력	
 } KEY;
 
@@ -107,6 +108,7 @@ typedef struct {
 	char repr;			// 화면에 표시할 문자(representation)	
 	int move_period;	// '몇 ms마다 한 칸 움직이는지'를 뜻함
 	int next_move_time;	// 다음에 움직일 시간
+	int color;			// 색깔
 } OBJECT_SAMPLE;
  
 

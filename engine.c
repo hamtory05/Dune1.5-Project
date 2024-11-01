@@ -18,6 +18,9 @@ void sw1_move(void);
 POSITION sw2_next_pos(void);
 void sw2_move(void);
 
+POSITION d_eagle_next_pos(void);
+void d_eagle_move(void);
+
 /* ================= control =================== */
 int sys_clock = 0;		// system-wide clock(ms)
 CURSOR cursor = { { 1, 1 }, {1, 1} };
@@ -53,7 +56,8 @@ OBJECT_SAMPLE f_hav_obj = {
 	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
 	.repr = 'H',
 	.move_period = 2000,
-	.next_move_time = 2000
+	.next_move_time = 2000,
+	.color = COLOR_DEFAULT + 16
 };
 
 // [ 적군 하베스터 ]
@@ -62,7 +66,8 @@ OBJECT_SAMPLE e_hav_obj = {
 	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
 	.repr = 'H',
 	.move_period = 2000,
-	.next_move_time = 2000
+	.next_move_time = 2000,
+	.color = COLOR_DEFAULT + 64
 };
 
 // [ 샌드웜 1 ]
@@ -83,7 +88,13 @@ OBJECT_SAMPLE sw2_obj = {
 	.next_move_time = 2500
 };
 
-
+OBJECT_SAMPLE d_eagle = {
+	.pos = {1, 1},
+	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
+	.repr = 'E',
+	.move_period = 500,
+	.next_move_time = 500
+};
 
 
 /* ================= main() =================== */
@@ -137,12 +148,15 @@ int main(void) {
 			switch (key) {
 			case k_quit: outro();
 			
-			case k_esc: state_esc(state_map);
+			case k_esc: state_esc(state_map, order_map);
 				break;
 			
 			case k_space: state_spacebar(map, state_map, cursor);
 				break;
-			
+
+			case k_h: press_h(resource, map);
+				break;
+
 			case k_none:
 			case k_undef:
 			default: break;
@@ -150,6 +164,7 @@ int main(void) {
 		}
 	
 		// 샘플 오브젝트 동작
+		d_eagle_move();
 		sw1_move();
 		sw2_move();
 
@@ -239,12 +254,16 @@ void init(void) {
 		}
 	}
 
+	// layer 2(map[2])은 비워 두기(-1로 채움)
+	for (int i = 0; i < MAP_HEIGHT; i++) {
+		for (int j = 0; j < MAP_WIDTH; j++) {
+			map[2][i][j] = -1;
+		}
+	}
 
-
-	// object sample
-	map[1][obj.pos.row][obj.pos.column] = 'o';
 
 	// [ 유닛 오브젝트 ]
+	map[2][d_eagle.pos.row][d_eagle.pos.column] = d_eagle.repr; // 사막 독수리
 	map[1][f_hav_obj.pos.row][f_hav_obj.pos.column] = f_hav_obj.repr; // 아군 하베스터
 	map[1][e_hav_obj.pos.row][e_hav_obj.pos.column] = e_hav_obj.repr; // 적군 하베스터 
 	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr; // 샌드웜 1
@@ -335,9 +354,64 @@ void sample_obj_move(void) {
 }
 
 
+// [ 사막 독수리 ]
+POSITION d_eagle_next_pos(void) {
+	// 현재 위치와 목적지를 비교해서 이동 방향 결정	
+	POSITION diff = psub(d_eagle.dest, d_eagle.pos);
+	DIRECTION dir;
+
+	// 목적지 도착. 지금은 단순히 원래 자리로 왕복
+	if (diff.row == 0 && diff.column == 0) {
+		if (d_eagle.dest.row == 1 && d_eagle.dest.column == 1) {
+			// topleft --> bottomright로 목적지 설정
+			POSITION new_dest = { MAP_HEIGHT - 2, MAP_WIDTH - 2 };
+			d_eagle.dest = new_dest;
+		}
+		else {
+			// bottomright --> topleft로 목적지 설정
+			POSITION new_dest = { 1, 1 };
+			d_eagle.dest = new_dest;
+		}
+		return d_eagle.pos;
+	}
+
+	// 가로축, 세로축 거리를 비교해서 더 먼 쪽 축으로 이동
+	if (abs(diff.row) >= abs(diff.column)) {
+		dir = (diff.row >= 0) ? d_down : d_up;
+	}
+	else {
+		dir = (diff.column >= 0) ? d_right : d_left;
+	}
+
+	// validation check
+	// next_pos가 맵을 벗어나지 않고, (지금은 없지만)장애물에 부딪히지 않으면 다음 위치로 이동
+	// 지금은 충돌 시 아무것도 안 하는데, 나중에는 장애물을 피해가거나 적과 전투를 하거나... 등등
+	POSITION next_pos = pmove(d_eagle.pos, dir);
+	if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[2][next_pos.row][next_pos.column] < 0) {
+
+		return next_pos;
+	}
+	else {
+		return d_eagle.pos;  // 제자리
+	}
+}
+
+void d_eagle_move(void) {
+	if (sys_clock <= d_eagle.next_move_time) {
+		return;
+	}
+
+	map[2][d_eagle.pos.row][d_eagle.pos.column] = -1;
+
+	d_eagle.pos = d_eagle_next_pos();
+	map[2][d_eagle.pos.row][d_eagle.pos.column] = d_eagle.repr;
+	d_eagle.next_move_time = sys_clock + d_eagle.move_period;
+}
+
 
 // [ 샌드웜 (1) ]
-
 POSITION sw1_next_pos(void) {
 	// 현재 위치와 목적지를 비교해서 이동 방향 결정	
 	POSITION diff = psub(sw1_obj.dest, sw1_obj.pos);
@@ -432,7 +506,7 @@ POSITION sw1_next_pos(void) {
 		return next_pos;
 	}
 
-	// [ 바위와 만났을 때 피해가기 (미완성) ]
+	// [ 바위와 만났을 때 피해가기 (미완성 | | 정확하게 실행되는지 모름) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[0][next_pos.row][next_pos.column] == 'R') {
@@ -467,7 +541,7 @@ POSITION sw1_next_pos(void) {
 		return next_pos;
 	}
 
-	// [ 샌드웜(2)와 만났을 때 피해가기 (미완성) ]
+	// [ 샌드웜(2)와 만났을 때 피해가기 (미완성 | 정확하게 실행되는지 모름) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'W') {
@@ -524,8 +598,8 @@ void sw1_move(void) {
 	sw1_obj.next_move_time = sys_clock + sw1_obj.move_period;
 }
 
-// [ 샌드웜 (2) ]
 
+// [ 샌드웜 (2) ]
 POSITION sw2_next_pos(void) {
 	// 현재 위치와 목적지를 비교해서 이동 방향 결정	
 	POSITION diff = psub(sw2_obj.dest, sw2_obj.pos);
@@ -610,7 +684,7 @@ POSITION sw2_next_pos(void) {
 
 		return next_pos;
 	}
-	// [ 바위와 만났을 때 피해가기 (미완성) ]
+	// [ 바위와 만났을 때 피해가기 (미완성 | | 정확하게 실행되는지 모름) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[0][next_pos.row][next_pos.column] == 'R') {
@@ -644,7 +718,7 @@ POSITION sw2_next_pos(void) {
 		}
 		return next_pos;
 	}
-	// [ 샌드웜(1)과 만났을 때 피해가기 (미완성) ]
+	// [ 샌드웜(1)과 만났을 때 피해가기 (미완성 | | 정확하게 실행되는지 모름) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'W') {

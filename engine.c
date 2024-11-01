@@ -684,11 +684,14 @@ POSITION sw2_next_pos(void) {
 
 		return next_pos;
 	}
-	// [ 바위와 만났을 때 피해가기 (미완성 | | 정확하게 실행되는지 모름) ]
+	// [ 건물, 장애물을 만났을 때 피해가기 (미완성 | | 정확하게 실행되는지 모름) ]
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
-		map[0][next_pos.row][next_pos.column] == 'R') {
-		// [ 바위가 위, 아래에 있을 때 ]
+		map[0][next_pos.row][next_pos.column] == 'R' || map[0][next_pos.row][next_pos.column] == '1' || map[0][next_pos.row][next_pos.column] == '2' || \
+		map[0][next_pos.row][next_pos.column] == '3' || map[0][next_pos.row][next_pos.column] == '4' || map[0][next_pos.row][next_pos.column] == '5' || \
+		map[0][next_pos.row][next_pos.column] == '6' || map[0][next_pos.row][next_pos.column] == '7' || map[0][next_pos.row][next_pos.column] == '8' || \
+		map[0][next_pos.row][next_pos.column] == '9') {
+		// [ 건물, 장애물이 위, 아래에 있을 때 ]
 		if (sw2_obj.pos.column + 1 == next_pos.column || sw2_obj.pos.column - 1 == next_pos.column) {
 			// [ 오른쪽으로 갈 때가 빠른지 왼쪽으로 갈 때가 빠른지 비교 ]
 			double move_left = sqrt(pow((sw2_obj.pos.row - 1) - new_dest.row, 2) + pow(sw2_obj.pos.column - new_dest.column, 2));
@@ -702,7 +705,7 @@ POSITION sw2_next_pos(void) {
 				next_pos.row = next_pos.row - 1;
 			}
 		}
-		// 바위가 오른쪽, 왼쪽에 있을 때
+		// 건물, 장애물 오른쪽, 왼쪽에 있을 때
 		else {
 			// [ 위로 갈 때가 빠른지 아래로 갈 때가 빠른지 비교 ]
 			double move_up = sqrt(pow(sw2_obj.pos.row - new_dest.row, 2) + pow(sw2_obj.pos.column - 1 - new_dest.column, 2));

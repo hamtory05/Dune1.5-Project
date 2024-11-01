@@ -17,6 +17,7 @@ const POSITION state_mes_pos = { 2, 63 };
 const POSITION state_mes2_pos = { 3, 63 };
 
 const POSITION sysmes_pos = { 20, 0 };
+const POSITION sysmes_mes_pos[6] = { {26, 0},{25, 0},{24, 0},{23, 0},{22, 0},{21, 0} };
 
 const POSITION order_pos = { 20, 63 };
 const POSITION order_mes_pos[4] = { {21, 63}, {22, 63}, {23, 63}, {24, 63} };
@@ -53,8 +54,9 @@ void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]);
 
 
 char save_name_for_order[2];
+char* order_message[4];
+char* save_system_message[6] = { NULL };
 
-char *order_message[4];
 
 // =================================== [ 건물 ] ======================================= //
 
@@ -467,7 +469,7 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 
 	// [ 명령창을 위한 변수 초기화 ]
 	for (int i = 0; i < 2; i++) {
-		save_name_for_order[i] = "";
+		save_name_for_order[i] = ' ';
 	}
 
 	// [ 상태 & 명령창 초기화 ]
@@ -486,7 +488,7 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 
 	// [ 명령 메시지 초기화 ]
 	for (int i = 0; i < 4; i++) { 
-		order_message[i] = "";
+		order_message[i] = 0;
 	}
 	
 
@@ -544,7 +546,7 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 	// < 스파이스 >
 	else if (backbuf[curr.row][curr.column] == '1' || backbuf[curr.row][curr.column] == '2' || backbuf[curr.row][curr.column] == '3' || \
 		backbuf[curr.row][curr.column] == '4' || backbuf[curr.row][curr.column] == '5' || backbuf[curr.row][curr.column] == '6' || \
-		backbuf[curr.row][curr.column] == '9' || backbuf[curr.row][curr.column] == '8' || backbuf[curr.row][curr.column] == '9') {
+		backbuf[curr.row][curr.column] == '7' || backbuf[curr.row][curr.column] == '8' || backbuf[curr.row][curr.column] == '9') {
 		char state_message[] = "건물 : 스파이스";
 		prints(padd(state_mes_pos, pos_state), state_message);
 	}
@@ -575,7 +577,7 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_HEIGHT][ORDER_WIDTH]) {
 	// [ 명령창을 위한 변수 초기화 ]
 	for (int i = 0; i < 2; i++) {
-		save_name_for_order[i] = "";
+		save_name_for_order[i] = ' ';
 	}
 
 	// [ 상태 & 명령창 초기화 ]
@@ -594,7 +596,7 @@ void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_H
 
 	// [ 명령 메시지 초기화 ]
 	for (int i = 0; i < 4; i++) {
-		order_message[i] = "";
+		order_message[i] = 0;
 	}
 }
 
@@ -629,4 +631,13 @@ void press_h(RESOURCE resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 			}
 		}
 	}
+}
+
+// [ 시스템 메시지 출력 ]
+void p_system_message(void);
+void p_system_message(void) {
+	if (save_system_message[0] != NULL) {
+
+	}
+	
 }

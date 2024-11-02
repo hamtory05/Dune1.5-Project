@@ -159,7 +159,7 @@ int main(void) {
 			case k_space: state_spacebar(map, state_map, cursor);
 				break;
 
-			case k_h: press_h(resource, map);
+			case k_h: press_h(resource, map, sysmes_map);
 				break;
 
 			case k_none:

@@ -17,7 +17,7 @@ const POSITION state_mes_pos = { 2, 63 };
 const POSITION state_mes2_pos = { 3, 63 };
 
 const POSITION sysmes_pos = { 20, 0 };
-const POSITION system_mes_pos[6] = { {27, 0},{26, 0},{25, 0},{24, 0},{23, 0},{22, 0} };
+const POSITION system_mes_pos[7] = { {27, 0},{26, 0},{25, 0},{24, 0},{23, 0},{22, 0}, {21, 0} };
 
 const POSITION order_pos = { 20, 63 };
 const POSITION order_mes_pos[4] = { {21, 63}, {22, 63}, {23, 63}, {24, 63} };
@@ -55,7 +55,7 @@ void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]);
 
 char save_name_for_order[2];
 char* order_message[4];
-char* save_system_message[6] = { NULL };
+char* save_system_message[7] = { NULL };
 char* send_system_message[1];
 
 // =================================== [ 건물 ] ======================================= //
@@ -600,31 +600,30 @@ void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_H
 
 
 // [ 하베스터 생산 H키를 눌렀을 때 ]
-void press_h(RESOURCE resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+void press_h(RESOURCE resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
 	// [ 아군 본진 --> 하베스터 생산 ] [ 하베스터 생산 비용 5, 인구수 5 ]
 	if (save_name_for_order[0] == 'B') {
 		if (save_name_for_order[1] == 'F') {
 			// [ 하베스터를 생산할 수 있을 때 ]
-			if (resource.spice >= 5 && resource.population_max - resource.population >= 5) {
+			if (resource.spice >= 5 && resource.population + 5 <= resource.population_max) {
 				// [ 하베스터 생산 ] 
 				map[1][15][3] = 'H';
-				// 시스템 메시지는 나중에
+				send_system_message[0] = "하베스터가 1기가 생산되었습니다.";
+				p_system_message(send_system_message[0], sysmes_map);
 				
-
-
-				resource.population -= 5;
+				// 자원감소, 인구수 증가
+				resource.spice -= 5;
+				resource.population += 5;
 			}
 			// [ 하베스터를 생산할 수 없을 때 ]
 			else {
-				// 시스템 메시지는 나중에
-				if (resource.spice < 5 && resource.population_max - resource.population < 5) {
-
+				if (resource.spice < 5) {
+					send_system_message[0] = "생산 자원이 부족하여 하베스터를 생산할 수 없습니다.";
+					p_system_message(send_system_message[0], sysmes_map);
 				}
-				else if (resource.spice < 5) {
-
-				}
-				else if (resource.population_max - resource.population < 5) {
-
+				else if (resource.population  + 5 > resource.population_max) {
+					send_system_message[0] = "인구수가 부족하여 하베스터를 생산할 수 없습니다.";
+					p_system_message(send_system_message[0], sysmes_map);
 				}
 			}
 		}
@@ -648,6 +647,9 @@ void p_system_message(char str[], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) 
 			if (save_system_message[2] != NULL) {
 				if (save_system_message[3] != NULL) {
 					if (save_system_message[4] != NULL) {
+						if (save_system_message[5] != NULL) {
+							save_system_message[6] = save_system_message[5];
+						}
 						save_system_message[5] = save_system_message[4];
 					}
 					save_system_message[4] = save_system_message[3];
@@ -662,7 +664,7 @@ void p_system_message(char str[], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) 
 	save_system_message[0] = str;
 	
 	// 시스템 메시지 출력
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < 7; i++) {
 		if (save_system_message[i] != NULL) {
 			prints(padd(system_mes_pos[i], pos_system), save_system_message[i]);
 		}

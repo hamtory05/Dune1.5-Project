@@ -21,7 +21,7 @@ void sw2_move(void);
 POSITION d_eagle_next_pos(void);
 void d_eagle_move(void);
 
-char* send_system_message[];
+char* send_system_message[1];
 
 /* ================= control =================== */
 int sys_clock = 0;		// system-wide clock(ms)
@@ -154,12 +154,18 @@ int main(void) {
 			case k_quit: outro();
 			
 			case k_esc: state_esc(state_map, order_map);
+				send_system_message[0] = "ESC키를 눌렀습니다.";
+				p_system_message(send_system_message[0], sysmes_map);
 				break;
 			
 			case k_space: state_spacebar(map, state_map, cursor);
+				send_system_message[0] = "스페이스바를 눌렀습니다.";
+				p_system_message(send_system_message[0], sysmes_map);
 				break;
 
 			case k_h: press_h(resource, map, sysmes_map);
+				send_system_message[0] = "H키를 눌렀습니다.";
+				p_system_message(send_system_message[0], sysmes_map);
 				break;
 
 			case k_none:
@@ -465,7 +471,9 @@ POSITION sw1_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'H') {
-		
+		send_system_message[0] = "샌드웜이 아군 하베스터를 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
+
 		f_hav_obj.repr = ' ';
 		return next_pos;
 	} 
@@ -474,6 +482,8 @@ POSITION sw1_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'H' ) {
+		send_system_message[0] = "샌드웜이 적군 하베스터를 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 		e_hav_obj.repr = ' ';
 		return next_pos;
@@ -483,6 +493,8 @@ POSITION sw1_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'F') {
+		send_system_message[0] = "샌드웜이 프레멘을 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 		return next_pos;
 	}
@@ -491,6 +503,8 @@ POSITION sw1_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'F') {
+		send_system_message[0] = "샌드웜이 투사를 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 		return next_pos;
 	}
@@ -499,6 +513,8 @@ POSITION sw1_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'S') {
+		send_system_message[0] = "샌드웜이 보병을 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 		return next_pos;
 	}
@@ -507,6 +523,8 @@ POSITION sw1_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'T') {
+		send_system_message[0] = "샌드웜이 중전차를 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 		return next_pos;
 	}
@@ -594,6 +612,9 @@ void sw1_move(void) {
 	// 10/300 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
 	int r = rand() % 299;
 	if (r < 9) {
+		send_system_message[0] = "샌드웜이 스파이스 매장지를 생성했습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
+
 		map[0][sw1_obj.pos.row][sw1_obj.pos.column] = spice_number[r];
 	}
 
@@ -649,6 +670,8 @@ POSITION sw2_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'H') {
+		send_system_message[0] = "샌드웜이 아군 하베스터를 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 		f_hav_obj.repr = ' ';
 		return next_pos;
@@ -657,6 +680,8 @@ POSITION sw2_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'H') {
+		send_system_message[0] = "샌드웜이 적군 하베스터를 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 		e_hav_obj.repr = ' ';
 		return next_pos;
@@ -665,6 +690,8 @@ POSITION sw2_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'F') {
+		send_system_message[0] = "샌드웜이 프레멘을 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 		return next_pos;
 	}
@@ -672,6 +699,8 @@ POSITION sw2_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'F') {
+		send_system_message[0] = "샌드웜이 투사를 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 		return next_pos;
 	}
@@ -679,6 +708,8 @@ POSITION sw2_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'S') {
+		send_system_message[0] = "샌드웜이 보병을 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 		return next_pos;
 	}
@@ -686,6 +717,8 @@ POSITION sw2_next_pos(void) {
 	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[1][next_pos.row][next_pos.column] == 'T') {
+		send_system_message[0] = "샌드웜이 중전차를 잡아먹었습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 		return next_pos;
 	}
@@ -746,6 +779,9 @@ void sw2_move(void) {
 	// 10/300 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
 	int r = rand() % 299;
 	if (r < 9) {
+		send_system_message[0] = "샌드웜이 스파이스 매장지를 생성했습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
+
 		map[0][sw2_obj.pos.row][sw2_obj.pos.column] = spice_number[r];
 	}
 

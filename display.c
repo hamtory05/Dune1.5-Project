@@ -37,7 +37,6 @@ char sysmes_frontbuf[SYSMES_HEIGHT][SYSMES_WIDTH] = { 0 };
 char order_backbuf[ORDER_HEIGHT][ORDER_WIDTH] = { 0 };
 char order_frontbuf[ORDER_HEIGHT][ORDER_WIDTH] = { 0 };
 
-
 void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP_WIDTH]);
 void display_resource(RESOURCE resource);
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
@@ -524,8 +523,10 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 		save_name_for_order[1] = 'F';
 		char state_message[] = "건물 : 아군 장판";
 		prints(padd(state_mes_pos, pos_state), state_message);
+
 		char state_message2[] = "숙소, 창고, 병영, 은신처를 설치할 수 있다.";
 		prints(padd(state_mes2_pos, pos_state), state_message2);
+
 		order_message[0] = "숙소를 설치하시겠습니까?   (D / ESC)";
 		order_message[1] = "창고를 설치하시겠습니까?   (G / ESC)";
 		order_message[2] = "병영을 설치하시겠습니까?   (B / ESC)";
@@ -630,6 +631,7 @@ void press_h(RESOURCE resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char s
 	}
 }
 
+
 // [ 시스템 메시지 출력 ]
 void p_system_message(char str[], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
 	POSITION pos_system = { 0, 1 };
@@ -637,7 +639,9 @@ void p_system_message(char str[], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) 
 	// 시스템 메시지 틀 초기화
 	for (int i = 1; i < SYSMES_HEIGHT - 1; i++) {
 		for (int j = 1; j < SYSMES_WIDTH - 1; j++) {
-			sysmes_map[i][j] = ' ';
+			POSITION pos = { i, j };
+			printc(padd(sysmes_pos, pos), sysmes_backbuf[i][j], COLOR_BLACK);
+
 		}
 	}
 
@@ -663,6 +667,7 @@ void p_system_message(char str[], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) 
 
 	save_system_message[0] = str;
 	
+
 	// 시스템 메시지 출력
 	for (int i = 0; i < 7; i++) {
 		if (save_system_message[i] != NULL) {

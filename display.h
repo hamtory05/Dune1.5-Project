@@ -36,6 +36,8 @@ void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_H
 
 void press_h(RESOURCE resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
 
+void p_system_message(char str[], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]);
+
 // [ 건물 함수 ]
 void p_f_base(OBJECT_BUILDING fb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);	 // 아군 본진
 void p_e_base(OBJECT_BUILDING eb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);	 // 적군 본진

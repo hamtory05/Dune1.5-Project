@@ -21,6 +21,7 @@ void printc(POSITION pos, char ch, int color) {
 }
 
 void prints(POSITION pos, char str[100]) {
+	set_color(15);
 	gotoxy(pos); 
 	printf("%s", str);
 }

@@ -17,7 +17,7 @@ const POSITION state_mes_pos = { 2, 63 };
 const POSITION state_mes2_pos = { 3, 63 };
 
 const POSITION sysmes_pos = { 20, 0 };
-const POSITION sysmes_mes_pos[6] = { {26, 0},{25, 0},{24, 0},{23, 0},{22, 0},{21, 0} };
+const POSITION system_mes_pos[6] = { {27, 0},{26, 0},{25, 0},{24, 0},{23, 0},{22, 0} };
 
 const POSITION order_pos = { 20, 63 };
 const POSITION order_mes_pos[4] = { {21, 63}, {22, 63}, {23, 63}, {24, 63} };
@@ -56,7 +56,7 @@ void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]);
 char save_name_for_order[2];
 char* order_message[4];
 char* save_system_message[6] = { NULL };
-
+char* send_system_message[1];
 
 // =================================== [ 건물 ] ======================================= //
 
@@ -452,8 +452,6 @@ void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]) {
 				if (order_backbuf[i][j] == '#') {
 					printc(padd(order_pos, pos), order_backbuf[i][j], COLOR_RESOURCE);
 				}
-				
-
 			}
 			order_frontbuf[i][j] = order_backbuf[i][j];
 		}
@@ -634,10 +632,40 @@ void press_h(RESOURCE resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 }
 
 // [ 시스템 메시지 출력 ]
-void p_system_message(void);
-void p_system_message(void) {
-	if (save_system_message[0] != NULL) {
+void p_system_message(char str[], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
+	POSITION pos_system = { 0, 1 };
 
+	// 시스템 메시지 틀 초기화
+	for (int i = 1; i < SYSMES_HEIGHT - 1; i++) {
+		for (int j = 1; j < SYSMES_WIDTH - 1; j++) {
+			sysmes_map[i][j] = ' ';
+		}
 	}
+
+	// 시스템 메시지를 위로 올리기
+	if (save_system_message[0] != NULL) {
+		if (save_system_message[1] != NULL) {
+			if (save_system_message[2] != NULL) {
+				if (save_system_message[3] != NULL) {
+					if (save_system_message[4] != NULL) {
+						save_system_message[5] = save_system_message[4];
+					}
+					save_system_message[4] = save_system_message[3];
+				}
+				save_system_message[3] = save_system_message[2];
+			}
+			save_system_message[2] = save_system_message[1];
+		}
+		save_system_message[1] = save_system_message[0];
+	}
+
+	save_system_message[0] = str;
 	
+	// 시스템 메시지 출력
+	for (int i = 0; i < 6; i++) {
+		if (save_system_message[i] != NULL) {
+			prints(padd(system_mes_pos[i], pos_system), save_system_message[i]);
+		}
+	}
+
 }

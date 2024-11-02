@@ -21,6 +21,8 @@ void sw2_move(void);
 POSITION d_eagle_next_pos(void);
 void d_eagle_move(void);
 
+char* send_system_message[];
+
 /* ================= control =================== */
 int sys_clock = 0;		// system-wide clock(ms)
 CURSOR cursor = { { 1, 1 }, {1, 1} };
@@ -104,6 +106,9 @@ int main(void) {
 	init();
 	intro();
 	display(resource, map, cursor, state_map, sysmes_map, order_map);
+
+	send_system_message[0] = "게임이 시작되었습니다.";
+	p_system_message(send_system_message[0], sysmes_map);
 
 	while (1) {
 		// loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인

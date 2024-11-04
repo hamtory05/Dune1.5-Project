@@ -112,7 +112,7 @@ typedef struct {
 } OBJECT_SAMPLE;
  
 
-// 건물들을 배치시키는 구조체
+// 건물 배치
 typedef struct {
 	POSITION pos1; // 건물 크기 1
 	POSITION pos2; // 건물 크기 2
@@ -121,6 +121,22 @@ typedef struct {
 	char repr;     // 건물 이름
 	int layer;     // 몇번 째 레이어에 들어가는건지 구분 <-- 필요하면 사용
 } OBJECT_BUILDING;
+
+// 모래 폭풍 
+typedef struct {
+	POSITION pos1;
+	POSITION pos2;
+	POSITION pos3;
+	POSITION pos4;
+	POSITION dest1;
+	POSITION dest2;
+	POSITION dest3; 
+	POSITION dest4; 
+	char repr;
+	int move_period;
+	int next_move_time;
+	int color;
+} SAND_WIND;
 
 
 

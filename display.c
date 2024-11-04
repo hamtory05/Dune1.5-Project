@@ -99,7 +99,6 @@ OBJECT_BUILDING f_plate = {
 	.layer = 0
 };
 
-
 // [ 적군 장판 ]
 OBJECT_BUILDING e_plate = {
 	.pos1 = {1, 55},
@@ -379,7 +378,6 @@ void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][
 	}
 }
 
-
 // [ 상태창 그리기 함수 ]
 void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 	state_project(state_map, state_backbuf);
@@ -398,7 +396,6 @@ void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 		}
 	}
 }
-
 
 
 // [ 시스템창 기본 틀 함수 ]
@@ -429,6 +426,7 @@ void display_sysmes_map(char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
 	}
 }
 
+
 // [ 명령창 기본 틀 함수 ]
 void order_project(char src[ORDER_HEIGHT][ORDER_WIDTH], char dest[ORDER_HEIGHT][ORDER_WIDTH]) {
 	for (int i = 0; i < ORDER_HEIGHT; i++) {
@@ -456,6 +454,8 @@ void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]) {
 		}
 	}
 }
+
+
 
 // [ 스페이스바를 눌렀을 때 ]
 void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], 
@@ -571,6 +571,7 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 	}
 
 }
+
 
 // [ ESC 키를 눌렀을 때 ]
 void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_HEIGHT][ORDER_WIDTH]) {

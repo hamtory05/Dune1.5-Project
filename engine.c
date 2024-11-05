@@ -48,8 +48,8 @@ char order_map[ORDER_HEIGHT][ORDER_WIDTH] = { 0 }; // 6 60
 int check_friend[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 0 --> 아무것도 아님, 1 --> 아군, 2 --> 적군
 
 RESOURCE resource = {
-	.spice = 0,
-	.spice_max = 5,
+	.spice = 5,
+	.spice_max = 20,
 	.population = 0,
 	.population_max = 50
 };
@@ -190,7 +190,7 @@ int main(void) {
 				p_system_message(send_system_message[0], sysmes_map);
 				break;
 
-			case k_h: press_h(resource, map, sysmes_map);
+			case k_h: press_h(&resource, map, sysmes_map, check_friend);
 				send_system_message[0] = "H키를 눌렀습니다.";
 				p_system_message(send_system_message[0], sysmes_map);
 				break;
@@ -302,7 +302,9 @@ void init(void) {
 	// [ 유닛 오브젝트 ]
 	map[2][d_eagle.pos.row][d_eagle.pos.column] = d_eagle.repr; // 사막 독수리
 	map[1][f_hav_obj.pos.row][f_hav_obj.pos.column] = f_hav_obj.repr; // 아군 하베스터
+	check_friend[f_hav_obj.pos.row][f_hav_obj.pos.column] = 1;
 	map[1][e_hav_obj.pos.row][e_hav_obj.pos.column] = e_hav_obj.repr; // 적군 하베스터 
+	check_friend[e_hav_obj.pos.row][e_hav_obj.pos.column] = 2;
 	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr; // 샌드웜 1
 	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = sw2_obj.repr; // 샌드웜 2
 }

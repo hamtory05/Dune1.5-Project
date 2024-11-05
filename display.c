@@ -296,7 +296,7 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_BLACK);
 					colorbuf[i][j] = COLOR_BLACK;
 				}
-				
+
 				// [ 적군 장판 ]
 				else if (backbuf[i][j] == 'P' && check_friend[i][j] == 2) {
 					// < 검은색 배경 >
@@ -322,14 +322,14 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 				// ==== [ 유닛 ] ====
 
 				// < 아군 하베스터 >
-				else if (backbuf[i][j] == 'H' && i == 14 && j == 1) {
+				else if (backbuf[i][j] == 'H' && check_friend[i][j] == 1) {
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 16);
 					colorbuf[i][j] = COLOR_DEFAULT + 16;
 					check_friend[i][j] = 1;
 				}
 
 				// < 적군 하베스터 >
-				else if (backbuf[i][j] == 'H' && i == 3 && j == 58) {
+				else if (backbuf[i][j] == 'H' && check_friend[i][j] == 2) {
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 64);
 					colorbuf[i][j] = COLOR_DEFAULT + 64;
 					check_friend[i][j] = 2;
@@ -605,28 +605,31 @@ void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_H
 
 
 // [ 하베스터 생산 H키를 눌렀을 때 ]
-void press_h(RESOURCE resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
+void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH],
+	int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	// [ 아군 본진 --> 하베스터 생산 ] [ 하베스터 생산 비용 5, 인구수 5 ]
 	if (save_name_for_order[0] == 'B') {
 		if (save_name_for_order[1] == 'F') {
 			// [ 하베스터를 생산할 수 있을 때 ]
-			if (resource.spice >= 5 && resource.population + 5 <= resource.population_max) {
+			if (resource->spice >= 5 && resource->population + 5 <= resource->population_max) {
 				// [ 하베스터 생산 ] 
-				map[1][15][3] = 'H';
+				map[1][14][2] = 'H';
+				check_friend[14][2] = 1;
 				send_system_message[0] = "하베스터가 1기가 생산되었습니다.";
 				p_system_message(send_system_message[0], sysmes_map);
 				
 				// 자원감소, 인구수 증가
-				resource.spice -= 5;
-				resource.population += 5;
+				resource->spice -= 5;
+				resource->population += 5;
+				
 			}
 			// [ 하베스터를 생산할 수 없을 때 ]
 			else {
-				if (resource.spice < 5) {
+				if (resource->spice < 5) {
 					send_system_message[0] = "생산 자원이 부족하여 하베스터를 생산할 수 없습니다.";
 					p_system_message(send_system_message[0], sysmes_map);
 				}
-				else if (resource.population  + 5 > resource.population_max) {
+				else if (resource->population  + 5 > resource->population_max) {
 					send_system_message[0] = "인구수가 부족하여 하베스터를 생산할 수 없습니다.";
 					p_system_message(send_system_message[0], sysmes_map);
 				}

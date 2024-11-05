@@ -26,7 +26,6 @@ char backbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 char frontbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 
 int colorbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
-int check_friend[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 0 --> 아무것도 아님, 1 --> 아군, 2 --> 적군
  
 char state_backbuf[STATE_HEIGHT][STATE_WIDTH] = { 0 };
 char state_frontbuf[STATE_HEIGHT][STATE_WIDTH] = { 0 };
@@ -39,7 +38,7 @@ char order_frontbuf[ORDER_HEIGHT][ORDER_WIDTH] = { 0 };
 
 void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP_WIDTH]);
 void display_resource(RESOURCE resource);
-void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
+void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]);
 void display_cursor(CURSOR cursor);
 
 void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]);
@@ -140,7 +139,7 @@ OBJECT_BUILDING rock_4 = {
 // ==== [ 함수로 건물 출력 ] ==== //
 
 // [ 아군 본진 출력 함수 ]
-void p_f_base(OBJECT_BUILDING fb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+void p_f_base(OBJECT_BUILDING fb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	POSITION fb_num[] = { fb.pos1, fb.pos2, fb.pos3, fb.pos4 };
 	for (int i = 0; i < 4; i++) {
 		map[0][fb_num[i].row][fb_num[i].column] = fb.repr;
@@ -149,7 +148,7 @@ void p_f_base(OBJECT_BUILDING fb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 }
 
 // [ 적군 본진 출력 함수 ]
-void p_e_base(OBJECT_BUILDING eb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+void p_e_base(OBJECT_BUILDING eb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	POSITION eb_num[] = { eb.pos1, eb.pos2, eb.pos3, eb.pos4 };
 	for (int i = 0; i < 4; i++) {
 		map[0][eb_num[i].row][eb_num[i].column] = eb.repr;
@@ -158,7 +157,7 @@ void p_e_base(OBJECT_BUILDING eb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 }
 
 // [ 아군 장판 출력 함수 ]
-void p_f_plate(OBJECT_BUILDING fp, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+void p_f_plate(OBJECT_BUILDING fp, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	POSITION fp_num[] = { fp.pos1, fp.pos2, fp.pos3, fp.pos4 };
 	for (int i = 0; i < 4; i++) {
 		map[0][fp_num[i].row][fp_num[i].column] = fp.repr;
@@ -167,7 +166,7 @@ void p_f_plate(OBJECT_BUILDING fp, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 }
 
 // [ 적군 장판 출력 함수 ] 
-void p_e_plate(OBJECT_BUILDING ep, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+void p_e_plate(OBJECT_BUILDING ep, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	POSITION ep_num[] = { ep.pos1, ep.pos2, ep.pos3, ep.pos4 };
 	for (int i = 0; i < 4; i++) {
 		map[0][ep_num[i].row][ep_num[i].column] = ep.repr;
@@ -207,11 +206,11 @@ void p_rock_4(OBJECT_BUILDING r4, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 
 
 // [ 모든 건물 출력 함수 ]
-void p_building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	p_f_base(f_base, map); // 아군 본진
-	p_e_base(e_base, map); // 적군 본진
-	p_f_plate(f_plate, map); // 아군 장판
-	p_e_plate(e_plate, map); // 적군 장판
+void p_building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
+	p_f_base(f_base, map, check_friend); // 아군 본진
+	p_e_base(e_base, map, check_friend); // 적군 본진
+	p_f_plate(f_plate, map, check_friend); // 아군 장판
+	p_e_plate(e_plate, map, check_friend); // 적군 장판
 	p_start_spice(start_spice, map); // 초기 스파이스 매장지 아군 1 적군 1
 	p_rock_1(rock_1, map); // 바위 1 
 	p_rock_2(rock_2, map); // 바위 2
@@ -228,13 +227,14 @@ void display(
 	CURSOR cursor,
 	char state_map[STATE_HEIGHT][STATE_WIDTH],
 	char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH],
-	char order_map[ORDER_HEIGHT][ORDER_WIDTH])
+	char order_map[ORDER_HEIGHT][ORDER_WIDTH],
+	int check_friend[MAP_HEIGHT][MAP_WIDTH])
 {
 	display_resource(resource);
-	display_map(map);
+	display_map(map, check_friend);
 	display_cursor(cursor);
 	// NEW FUNC
-	p_building(map);
+	p_building(map, check_friend);
 	display_state_map(state_map);
 	display_sysmes_map(sysmes_map);
 	display_order_map(order_map);
@@ -266,7 +266,7 @@ void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP
 	}
 }
 
-void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	project(map, backbuf);
 
 	for (int i = 0; i < MAP_HEIGHT; i++) {
@@ -325,12 +325,14 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 				else if (backbuf[i][j] == 'H' && i == 14 && j == 1) {
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 16);
 					colorbuf[i][j] = COLOR_DEFAULT + 16;
+					check_friend[i][j] = 1;
 				}
 
 				// < 적군 하베스터 >
 				else if (backbuf[i][j] == 'H' && i == 3 && j == 58) {
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 64);
 					colorbuf[i][j] = COLOR_DEFAULT + 64;
+					check_friend[i][j] = 2;
 				}
 
 				// < 샌드웜 >
@@ -459,7 +461,8 @@ void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]) {
 
 // [ 스페이스바를 눌렀을 때 ]
 void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], 
-	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor) {
+	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor,
+	int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	POSITION curr = cursor.current;
 	POSITION pos_state = { 0, 1 }; 
 	POSITION pos_order = { 0, 1 };

@@ -25,6 +25,10 @@ void sw2_move(void);
 POSITION d_eagle_next_pos(void);
 void d_eagle_move(void);
 
+// 모래 폭풍
+POSITION sand_wind_next_pos(void);
+void sand_wind_move(void);
+
 // 시스템 메시지
 char* send_system_message[1];
 
@@ -41,6 +45,7 @@ char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH] = { 0 };  // 2, 16, 60
 char state_map[STATE_HEIGHT][STATE_WIDTH] = { 0 }; // 16, 50
 char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH] = { 0 }; // 6 60
 char order_map[ORDER_HEIGHT][ORDER_WIDTH] = { 0 }; // 6 60
+int check_friend[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 0 --> 아무것도 아님, 1 --> 아군, 2 --> 적군
 
 RESOURCE resource = {
 	.spice = 0,
@@ -127,7 +132,7 @@ int main(void) {
 
 	init();
 	intro();
-	display(resource, map, cursor, state_map, sysmes_map, order_map);
+	display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend);
 
 	send_system_message[0] = "게임이 시작되었습니다.";
 	p_system_message(send_system_message[0], sysmes_map);
@@ -180,7 +185,7 @@ int main(void) {
 				p_system_message(send_system_message[0], sysmes_map);
 				break;
 			
-			case k_space: state_spacebar(map, state_map, cursor);
+			case k_space: state_spacebar(map, state_map, cursor, check_friend);
 				send_system_message[0] = "스페이스바를 눌렀습니다.";
 				p_system_message(send_system_message[0], sysmes_map);
 				break;
@@ -200,14 +205,11 @@ int main(void) {
 		d_eagle_move();
 		sw1_move();
 		sw2_move();
-
-		int sand_wind_rd = rand() % 100 + 1;
-		if (sand_wind_rd < 2) {
-			sand_wind_move();
-		}
+		//sand_wind_move();
+		
 
 		// 화면 출력
-		display(resource, map, cursor, state_map, sysmes_map, order_map);
+		display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend);
 		Sleep(TICK);
 		sys_clock += 10;
 	}
@@ -556,6 +558,7 @@ POSITION sw1_next_pos(void) {
 		}
 		return sw1_obj.pos;
 	}
+	return next_pos;
 }
 
 void sw1_move(void) {
@@ -580,7 +583,7 @@ void sw1_move(void) {
 
 	// [ 샌드웜 잡아먹기 ]
 	// [ 아군 하베스터와 만났을 때 (미완성) ]
-	if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'H') {
+	if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'H' && check_friend[sw1_obj.pos.row][sw1_obj.pos.column] == 1) {
 		send_system_message[0] = "샌드웜이 아군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
@@ -589,7 +592,7 @@ void sw1_move(void) {
 	}
 
 	// [ 적군 하베스터와 만났을 때 (미완성) ]
-	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'H') {
+	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'H' && check_friend[sw1_obj.pos.row][sw1_obj.pos.column] == 2) {
 		send_system_message[0] = "샌드웜이 적군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
@@ -718,6 +721,7 @@ POSITION sw2_next_pos(void) {
 		// 샌드웜(1)이 피해갈거라 샌드웜(2)는 갈 길 가면 됨.
 		return next_pos;
 	}
+	return next_pos;
 }
 
 void sw2_move(void) {
@@ -742,7 +746,7 @@ void sw2_move(void) {
 
 	// [ 샌드웜 잡아먹기 ]
 	// [ 아군 하베스터와 만났을 때 (미완성) ]
-	if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'H') {
+	if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'H' && check_friend[sw2_obj.pos.row][sw2_obj.pos.column] == 1) {
 		send_system_message[0] = "샌드웜이 아군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
@@ -751,7 +755,7 @@ void sw2_move(void) {
 	}
 
 	// [ 적군 하베스터와 만났을 때 (미완성) ]
-	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'H') {
+	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'H' && check_friend[sw2_obj.pos.row][sw2_obj.pos.column] == 2) {
 		send_system_message[0] = "샌드웜이 적군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
@@ -798,8 +802,6 @@ void sw2_move(void) {
 
 
 // [ 모래 폭풍 ]
-POSITION sand_wind_next_pos(void);
-void sand_wind_move(void);
 
 POSITION sand_wind_next_pos(void) {
 	// 모래 폭풍 생성 위치
@@ -856,7 +858,7 @@ POSITION sand_wind_next_pos(void) {
 	}
 	
 
-
+	return next_pos1, next_pos2, next_pos3, next_pos4;
 
 }
 
@@ -883,22 +885,51 @@ void sand_wind_move(void) {
 	map[1][sand_wind.pos4.row][sand_wind.pos4.column] = sand_wind.repr;
 
 	// [ 모래 폭풍에 닿은 건물, 유닛 행동 ]
-	// < 하베스터 > (미완성)
-	if (map[1][sand_wind.pos1.row][sand_wind.pos1.column] == 'H' || \
+	// < 아군 하베스터 > (미완성)
+	if ((map[1][sand_wind.pos1.row][sand_wind.pos1.column] == 'H' || \
 		map[1][sand_wind.pos2.row][sand_wind.pos2.column] == 'H' || \
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'H' || \
-		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'H') {
+		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'H') && \
+		check_friend[sand_wind.pos4.row][sand_wind.pos4.column] == 1) {
 		
-		map[1][sand_wind.pos1.row][sand_wind.pos1.column] == ' ';
-		map[1][sand_wind.pos2.row][sand_wind.pos2.column] == ' ';
-		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == ' ';
-		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == ' ';
+		map[1][sand_wind.pos1.row][sand_wind.pos1.column] = ' ';
+		map[1][sand_wind.pos2.row][sand_wind.pos2.column] = ' ';
+		map[1][sand_wind.pos3.row][sand_wind.pos3.column] = ' ';
+		map[1][sand_wind.pos4.row][sand_wind.pos4.column] = ' ';
+		
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 아군 하베스터가 사망했습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
+
+	}
+	// < 적군 하베스터 > (미완성)
+	if ((map[1][sand_wind.pos1.row][sand_wind.pos1.column] == 'H' || \
+		map[1][sand_wind.pos2.row][sand_wind.pos2.column] == 'H' || \
+		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'H' || \
+		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'H') && \
+		check_friend[sand_wind.pos4.row][sand_wind.pos4.column] == 2) {
+
+		map[1][sand_wind.pos1.row][sand_wind.pos1.column] = ' ';
+		map[1][sand_wind.pos2.row][sand_wind.pos2.column] = ' ';
+		map[1][sand_wind.pos3.row][sand_wind.pos3.column] = ' ';
+		map[1][sand_wind.pos4.row][sand_wind.pos4.column] = ' ';
+		
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 적군 하베스터가 사망했습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
+
 	}
 	// < 프레멘 > (아직 구현 X)
 	else if (map[1][sand_wind.pos1.row][sand_wind.pos1.column] == 'F' || \
 		map[1][sand_wind.pos2.row][sand_wind.pos2.column] == 'F' || \
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'F' || \
 		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'F') {
+
+
+
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 프레멘이 사망했습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 	}
 	// < 보병 > (아직 구현 X)
@@ -907,12 +938,23 @@ void sand_wind_move(void) {
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'S' || \
 		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'S') {
 
+
+
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 보병이 사망했습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
+
 	}
 	// < 투사 > (아직 구현 X)
 	else if (map[1][sand_wind.pos1.row][sand_wind.pos1.column] == 'F' || \
 		map[1][sand_wind.pos2.row][sand_wind.pos2.column] == 'F' || \
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'F' || \
 		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'F') {
+
+
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 투사가 사망했습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 	}
 	// < 중전차 > (아직 구현 X)
@@ -921,12 +963,21 @@ void sand_wind_move(void) {
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'T' || \
 		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'T') {
 
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 중전차가 부서졌습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
+
 	}
 	// < 숙소 > (아직 구현 X)
 	else if (map[1][sand_wind.pos1.row][sand_wind.pos1.column] == 'D' || \
 		map[1][sand_wind.pos2.row][sand_wind.pos2.column] == 'D' || \
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'D' || \
 		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'D') {
+
+
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 숙소가 박살났습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 	}
 	// < 창고 > (아직 구현 X)
@@ -935,12 +986,22 @@ void sand_wind_move(void) {
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'G' || \
 		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'G') {
 
+
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 창고가 박살났습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
+
 	}
 	// < 병영 > (아직 구현 X)
 	else if (map[1][sand_wind.pos1.row][sand_wind.pos1.column] == 'B' || \
 		map[1][sand_wind.pos2.row][sand_wind.pos2.column] == 'B' || \
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'B' || \
 		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'B') {
+
+
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 병영이 박살났습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 	}
 	// < 은신처 > (아직 구현 X)
@@ -949,6 +1010,11 @@ void sand_wind_move(void) {
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'S' || \
 		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'S') {
 
+
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 은신처가 박살났습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
+
 	}
 	// < 투기장 > (아직 구현 X)
 	else if (map[1][sand_wind.pos1.row][sand_wind.pos1.column] == 'A' || \
@@ -956,12 +1022,23 @@ void sand_wind_move(void) {
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'A' || \
 		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'A') {
 
+
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 투기장이 박살났습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
+
 	}
 	// < 공장 > (아직 구현 X)
 	else if (map[1][sand_wind.pos1.row][sand_wind.pos1.column] == 'F' || \
 		map[1][sand_wind.pos2.row][sand_wind.pos2.column] == 'F' || \
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] == 'F' || \
 		map[1][sand_wind.pos4.row][sand_wind.pos4.column] == 'F') {
+		
+
+
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍에 의해 공장이 박살났습니다.";
+		p_system_message(send_system_message[0], sysmes_map);
 
 	}
 
@@ -974,6 +1051,9 @@ void sand_wind_move(void) {
 		map[1][sand_wind.pos3.row][sand_wind.pos3.column] = sand_wind.repr;
 		map[1][sand_wind.pos4.row][sand_wind.pos4.column] = sand_wind.repr;
 		
+		// 시스템 메시지
+		send_system_message[0] = "모래 폭풍이 사라졌습니다..";
+		p_system_message(send_system_message[0], sysmes_map);
 	}
 
 	sand_wind.next_move_time = sys_clock + sand_wind.move_period;

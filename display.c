@@ -39,7 +39,7 @@ char order_frontbuf[ORDER_HEIGHT][ORDER_WIDTH] = { 0 };
 void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP_WIDTH]);
 void display_resource(RESOURCE resource);
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]);
-void display_cursor(CURSOR cursor);
+void display_cursor(CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH]);
 
 void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]);
 void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]);
@@ -110,7 +110,7 @@ OBJECT_BUILDING e_plate = {
 
 // [ 바위 1 ~ 4 ]
 OBJECT_BUILDING rock_1 = {
-	.pos1 = {12, 6},
+	.pos1 = {12, 14},
 	.repr = 'R',
 	.layer = 0
 };
@@ -232,7 +232,7 @@ void display(
 {
 	display_resource(resource);
 	display_map(map, check_friend);
-	display_cursor(cursor);
+	display_cursor(cursor, check_friend);
 	// NEW FUNC
 	p_building(map, check_friend);
 	display_state_map(state_map);
@@ -307,7 +307,7 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 				// [ 스파이스 ]
 				else if (backbuf[i][j] == '1' || backbuf[i][j] == '2' || backbuf[i][j] == '3' || backbuf[i][j] == '4' || \
 					backbuf[i][j] == '5' || backbuf[i][j] == '6' || backbuf[i][j] == '7' || backbuf[i][j] == '8' || backbuf[i][j] == '9') {
-					// < 주황색 배경 >    아직 색 못 찾음
+					// < 주황색 배경 >
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 48);
 					colorbuf[i][j] = COLOR_DEFAULT + 48;
 				}
@@ -341,6 +341,11 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 					colorbuf[i][j] = COLOR_DEFAULT + 96;
 				}
 
+				// < 사막 독수리 >
+				else if (backbuf[i][j] == 'E') {
+					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 17);
+					colorbuf[i][j] = COLOR_DEFAULT + 17;
+				}
 				// < 기타 >
 				else {
 					printc(padd(map_pos, pos), backbuf[i][j], COLOR_RESOURCE);
@@ -353,9 +358,11 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 }
 
 // frontbuf[][]에서 커서 위치의 문자를 색만 바꿔서 그대로 다시 출력
-void display_cursor(CURSOR cursor) {
+void display_cursor(CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	POSITION prev = cursor.previous;
 	POSITION curr = cursor.current;
+
+	
 
 	char ch = frontbuf[prev.row][prev.column]; 
 	printc(padd(map_pos, prev), ch, COLOR_BLACK);
@@ -366,6 +373,11 @@ void display_cursor(CURSOR cursor) {
 
 	ch = frontbuf[curr.row][curr.column];
 	printc(padd(map_pos, curr), ch, COLOR_BLACK);
+
+	if (ch == 'P' && check_friend[curr.row][curr.column] == 1) {
+		
+	}
+
 }	
 
 
@@ -513,8 +525,7 @@ void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
 		prints(padd(order_mes_pos[0], pos_order), order_message[0]);
 	}
 	// < 적군 본진 >
-	else if (backbuf[curr.row][curr.column] == 'B' && \
-		(curr.row == 1 || curr.row == 2) && (curr.column == 57 || curr.column == 58)) {
+	else if (backbuf[curr.row][curr.column] == 'B' && check_friend[curr.row][curr.column] == 2) {
 		save_name_for_order[0] = 'B';
 		save_name_for_order[1] = 'E';
 		char state_message[] = "건물 : 적군 본진";
@@ -682,4 +693,10 @@ void p_system_message(char str[], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) 
 		}
 	}
 
+}
+
+
+// [ B키를 눌렀을 때 ]
+void press_b(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
+	
 }

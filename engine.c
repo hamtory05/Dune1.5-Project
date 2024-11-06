@@ -484,81 +484,79 @@ POSITION sw1_next_pos(void) {
 	}
 
 
-	// [ 샌드웜 이동 (바위, 샌드웜 예외처리) ]
+	// [ 샌드웜 이동 ]
 	POSITION next_pos = pmove(sw1_obj.pos, dir);
+
+	// [ 건물, 장애물, 유닛과 만났을 때 피해가기 ]
 	if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
-		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2) {
+		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
+		map[0][next_pos.row][next_pos.column] == 'R' || map[0][next_pos.row][next_pos.column] == '1' || map[0][next_pos.row][next_pos.column] == '2' || \
+		map[0][next_pos.row][next_pos.column] == '3' || map[0][next_pos.row][next_pos.column] == '4' || map[0][next_pos.row][next_pos.column] == '5' || \
+		map[0][next_pos.row][next_pos.column] == '6' || map[0][next_pos.row][next_pos.column] == '7' || map[0][next_pos.row][next_pos.column] == '8' || \
+		map[0][next_pos.row][next_pos.column] == '9' || map[0][next_pos.row][next_pos.column] == 'B' || map[0][next_pos.row][next_pos.column] == 'P' || \
+		map[0][next_pos.row][next_pos.column] == 'S' || map[0][next_pos.row][next_pos.column] == 'G' || map[0][next_pos.row][next_pos.column] == 'D' || \
+		map[0][next_pos.row][next_pos.column] == 'A' || map[0][next_pos.row][next_pos.column] == 'S' || map[0][next_pos.row][next_pos.column] == 'F') {
 
+		// [ 건물, 장애물, 유닛이 위, 아래에 있을 때 ]
+		if (sw1_obj.pos.row + 1 == next_pos.row || sw1_obj.pos.row - 1 == next_pos.row) {
+			// [ 오른쪽으로 갈 때가 빠른지 왼쪽으로 갈 때가 빠른지 비교 ]
+			double move_left = sqrt(pow(sw1_obj.pos.row - new_dest.row, 2) + pow((sw1_obj.pos.column - 1) - new_dest.column, 2));
+			double move_right = sqrt(pow(sw1_obj.pos.row - new_dest.row, 2) + pow((sw1_obj.pos.column + 1) - new_dest.column, 2));
+			// [ 오른쪽으로 가기 ]
+			if (move_left < move_right) {
+				// < 오른쪽으로 갔을 때 맵을 벗어나게 되는지를 체크 >
+				if (sw1_obj.pos.column + 1 != MAP_WIDTH - 1) { // 맵을 벗어나지 않으면 오른쪽
+					next_pos.row += 1;
+					next_pos.column = sw1_obj.pos.column + 1;
+				}
+				else { // 맵을 벗어나면 왼쪽
+					next_pos.row -= 1;
+					next_pos.column = sw1_obj.pos.column - 1;
+				}
+			}
+			// [ 왼쪽으로 가기 ]
+			else {
+				// < 왼쪽으로 갔을 때 맵을 벗어나게 되는지를 체크 >
+				if (sw1_obj.pos.column - 1 != 0) { // 맵을 벗어나지 않으면 왼쪽
+					next_pos.row -= 1;
+					next_pos.column = sw1_obj.pos.column - 1;
+				}
+				else { // 맵을 벗어나면 오른쪽
+					next_pos.row += 1;
+					next_pos.column = sw1_obj.pos.column + 1;
+				}
+			}
+		}
+		// [ 건물, 장애물, 유닛이 오른쪽, 왼쪽에 있을 때 ]
+		else if (sw1_obj.pos.column + 1 == next_pos.column || sw1_obj.pos.column - 1 == next_pos.column) {
+			// [ 위로 갈 때가 빠른지 아래로 갈 때가 빠른지 비교 ]
+			double move_up = sqrt(pow((sw1_obj.pos.row - 1) - new_dest.row, 2) + pow(sw1_obj.pos.column - new_dest.column, 2));
+			double move_down = sqrt(pow((sw1_obj.pos.row + 1) - new_dest.row, 2) + pow(sw1_obj.pos.column - new_dest.column, 2));
+			// [ 위로 가기 ]
+			if (move_up < move_down) {
+				// < 위로 갔을 때 맵을 벗어나는지 확인 >
+				if (sw1_obj.pos.row + 1 != 0) { // 맵을 벗어나지 않으면 위로
+					next_pos.column += 1;
+					next_pos.row = sw1_obj.pos.row + 1;
+				}
+				else { // 맵을 벗어나면 아래로
+					next_pos.column -= 1;
+					next_pos.row = sw1_obj.pos.row - 1;
+				}
+			}
+			// [ 아래로 가기 ]
+			else {
+				if (sw1_obj.pos.row - 1 != MAP_HEIGHT - 1) { // 맵을 벗어나면 아래로
+					next_pos.column -= 1;
+					next_pos.row = sw1_obj.pos.row - 1;
+				}
+				else { // 맵을 벗어나면 위로
+					next_pos.column += 1;
+					next_pos.row = sw1_obj.pos.row + 1;
+				}
+			}
+		}
 		return next_pos;
-	}
-	// [ 바위와 만났을 때 피해가기 (미완성 | | 정확하게 실행되는지 모름) ]
-	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
-		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
-		map[0][next_pos.row][next_pos.column] == 'R') {
-		// [ 바위가 위, 아래에 있을 때 ]
-		if (sw1_obj.pos.column + 1 == next_pos.column || sw1_obj.pos.column - 1 == next_pos.column) {
-			// [ 오른쪽으로 갈 때가 빠른지 왼쪽으로 갈 때가 빠른지 비교 ]
-			double move_left = sqrt(pow((sw1_obj.pos.row - 1) - new_dest.row, 2) + pow(sw1_obj.pos.column - new_dest.column, 2));
-			double move_right = sqrt(pow((sw1_obj.pos.row + 1) - new_dest.row, 2) + pow(sw1_obj.pos.column - new_dest.column, 2));;
-			// [ 오른쪽으로 가기 ]
-			if (move_left < move_right) {
-				next_pos.row = next_pos.row + 1;
-			}
-			// [ 왼쪽으로 가기 ]
-			else {
-				next_pos.row = next_pos.row - 1;
-			}
-		}
-		// 바위가 오른쪽, 왼쪽에 있을 때
-		else {
-			// [ 위로 갈 때가 빠른지 아래로 갈 때가 빠른지 비교 ]
-			double move_up = sqrt(pow(sw1_obj.pos.row - new_dest.row, 2) + pow(sw1_obj.pos.column - 1 - new_dest.column, 2));
-			double move_down = sqrt(pow(sw1_obj.pos.row - new_dest.row, 2) + pow((sw1_obj.pos.column + 1) - new_dest.column, 2));
-			// [ 위로 가기 ]
-			if (move_up < move_down) {
-				next_pos.column = next_pos.column + 1;
-			}
-			// [ 아래로 가기 ]
-			else {
-				next_pos.column = next_pos.column - 1;
-			}
-		}
-	}
-
-	// [ 샌드웜(2)와 만났을 때 피해가기 (미완성 | 정확하게 실행되는지 모름) ]
-	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
-		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
-		map[1][next_pos.row][next_pos.column] == 'W') {
-
-		// 샌드웜(2)가 위, 아래에 있을 때
-		if (sw1_obj.pos.column + 1 == next_pos.column || sw1_obj.pos.column - 1 == next_pos.column) {
-			// [ 오른쪽으로 갈 때가 빠른지 왼쪽으로 갈 때가 빠른지 비교 ]
-			double move_left = sqrt(pow((sw1_obj.pos.row - 1) - new_dest.row, 2) + pow(sw1_obj.pos.column - new_dest.column, 2));
-			double move_right = sqrt(pow((sw1_obj.pos.row + 1) - new_dest.row, 2) + pow(sw1_obj.pos.column - new_dest.column, 2));;
-			// [ 오른쪽으로 가기 ]
-			if (move_left < move_right) {
-				next_pos.row = next_pos.row + 1;
-			}
-			// [ 왼쪽으로 가기 ]
-			else {
-				next_pos.row = next_pos.row - 1;
-			}
-		}
-		// 샌드웜(2) 오른쪽, 왼쪽에 있을 때
-		else {
-			// [ 위로 갈 때가 빠른지 아래로 갈 때가 빠른지 비교 ]
-			double move_up = sqrt(pow(sw1_obj.pos.row - new_dest.row, 2) + pow(sw1_obj.pos.column - 1 - new_dest.column, 2));
-			double move_down = sqrt(pow(sw1_obj.pos.row - new_dest.row, 2) + pow((sw1_obj.pos.column + 1) - new_dest.column, 2));
-			// [ 위로 가기 ]
-			if (move_up < move_down) {
-				next_pos.column = next_pos.column + 1;
-			}
-			// [ 아래로 가기 ]
-			else {
-				next_pos.column = next_pos.column - 1;
-			}
-		}
-		return sw1_obj.pos;
 	}
 	return next_pos;
 }
@@ -672,55 +670,78 @@ POSITION sw2_next_pos(void) {
 		dir = (diff.column >= 0) ? d_right : d_left;
 	}
 
-	// 유닛과 만났을 때 (겹쳐졌을 때) 유닛과 전투 (잡아먹기)
+	// [ 샌드웜 이동 ]
 	POSITION next_pos = pmove(sw2_obj.pos, dir);
-	if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
-		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2) {
 
-		return next_pos;
-	}
-	
-	// [ 건물, 장애물을 만났을 때 피해가기 (미완성 | | 정확하게 실행되는지 모름) ]
-	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+	// [ 건물, 장애물, 유닛 만났을 때 피해가기 ]
+	if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[0][next_pos.row][next_pos.column] == 'R' || map[0][next_pos.row][next_pos.column] == '1' || map[0][next_pos.row][next_pos.column] == '2' || \
 		map[0][next_pos.row][next_pos.column] == '3' || map[0][next_pos.row][next_pos.column] == '4' || map[0][next_pos.row][next_pos.column] == '5' || \
 		map[0][next_pos.row][next_pos.column] == '6' || map[0][next_pos.row][next_pos.column] == '7' || map[0][next_pos.row][next_pos.column] == '8' || \
-		map[0][next_pos.row][next_pos.column] == '9') {
-		// [ 건물, 장애물이 위, 아래에 있을 때 ]
-		if (sw2_obj.pos.column + 1 == next_pos.column || sw2_obj.pos.column - 1 == next_pos.column) {
+		map[0][next_pos.row][next_pos.column] == '9' || map[0][next_pos.row][next_pos.column] == 'B' || map[0][next_pos.row][next_pos.column] == 'P' || \
+		map[0][next_pos.row][next_pos.column] == 'S' || map[0][next_pos.row][next_pos.column] == 'G' || map[0][next_pos.row][next_pos.column] == 'D' || \
+		map[0][next_pos.row][next_pos.column] == 'A' || map[0][next_pos.row][next_pos.column] == 'S' || map[0][next_pos.row][next_pos.column] == 'F') {
+
+		// [ 건물, 장애물, 유닛이 위, 아래에 있을 때 ]
+		if (sw2_obj.pos.row + 1 == next_pos.row || sw2_obj.pos.row - 1 == next_pos.row) {
 			// [ 오른쪽으로 갈 때가 빠른지 왼쪽으로 갈 때가 빠른지 비교 ]
-			double move_left = sqrt(pow((sw2_obj.pos.row - 1) - new_dest.row, 2) + pow(sw2_obj.pos.column - new_dest.column, 2));
-			double move_right = sqrt(pow((sw2_obj.pos.row + 1) - new_dest.row, 2) + pow(sw2_obj.pos.column - new_dest.column, 2));;
+			double move_left = sqrt(pow(sw2_obj.pos.row - new_dest.row, 2) + pow((sw2_obj.pos.column - 1) - new_dest.column, 2));
+			double move_right = sqrt(pow(sw2_obj.pos.row - new_dest.row, 2) + pow((sw2_obj.pos.column + 1) - new_dest.column, 2));
 			// [ 오른쪽으로 가기 ]
 			if (move_left < move_right) {
-				next_pos.row = next_pos.row + 1;
+				// < 오른쪽으로 갔을 때 맵을 벗어나게 되는지를 체크 >
+				if (sw2_obj.pos.column + 1 != MAP_WIDTH - 1) { // 맵을 벗어나지 않으면 오른쪽
+					next_pos.row += 1;
+					next_pos.column = sw2_obj.pos.column + 1;
+				}
+				else { // 맵을 벗어나면 왼쪽
+					next_pos.row -= 1;
+					next_pos.column = sw2_obj.pos.column - 1;
+				}
 			}
 			// [ 왼쪽으로 가기 ]
 			else {
-				next_pos.row = next_pos.row - 1;
+				// < 왼쪽으로 갔을 때 맵을 벗어나게 되는지를 체크 >
+				if (sw2_obj.pos.column - 1 != 0) { // 맵을 벗어나지 않으면 왼쪽
+					next_pos.row -= 1;
+					next_pos.column = sw2_obj.pos.column - 1;
+				}
+				else { // 맵을 벗어나면 오른쪽
+					next_pos.row += 1;
+					next_pos.column = sw2_obj.pos.column + 1;
+				}
 			}
 		}
-		// 건물, 장애물 오른쪽, 왼쪽에 있을 때
-		else {
+		// [ 건물, 장애물, 유닛이 오른쪽, 왼쪽에 있을 때 ]
+		else if (sw2_obj.pos.column + 1 == next_pos.column || sw2_obj.pos.column - 1 == next_pos.column) {
 			// [ 위로 갈 때가 빠른지 아래로 갈 때가 빠른지 비교 ]
-			double move_up = sqrt(pow(sw2_obj.pos.row - new_dest.row, 2) + pow(sw2_obj.pos.column - 1 - new_dest.column, 2));
-			double move_down = sqrt(pow(sw2_obj.pos.row - new_dest.row, 2) + pow((sw2_obj.pos.column + 1) - new_dest.column, 2));
+			double move_up = sqrt(pow((sw2_obj.pos.row - 1) - new_dest.row, 2) + pow(sw2_obj.pos.column - new_dest.column, 2));
+			double move_down = sqrt(pow((sw2_obj.pos.row + 1) - new_dest.row, 2) + pow(sw2_obj.pos.column - new_dest.column, 2));
 			// [ 위로 가기 ]
 			if (move_up < move_down) {
-				next_pos.column = next_pos.column + 1;
+				// < 위로 갔을 때 맵을 벗어나는지 확인 >
+				if (sw2_obj.pos.row + 1 != 0) { // 맵을 벗어나지 않으면 위로
+					next_pos.column += 1;
+					next_pos.row = sw2_obj.pos.row + 1;
+				}
+				else { // 맵을 벗어나면 아래로
+					next_pos.column -= 1;
+					next_pos.row = sw2_obj.pos.row - 1;
+				}
 			}
 			// [ 아래로 가기 ]
 			else {
-				next_pos.column = next_pos.column - 1;
+				if (sw2_obj.pos.row - 1 != MAP_HEIGHT - 1) { // 맵을 벗어나면 아래로
+					next_pos.column -= 1;
+					next_pos.row = sw2_obj.pos.row - 1;
+				}
+				else { // 맵을 벗어나면 위로
+					next_pos.column += 1;
+					next_pos.row = sw2_obj.pos.row + 1;
+				}
 			}
 		}
-	}
-	// [ 샌드웜(1)과 만났을 때 피해가기 (미완성 | | 정확하게 실행되는지 모름) ]
-	else if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
-		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
-		map[1][next_pos.row][next_pos.column] == 'W') {
-		// 샌드웜(1)이 피해갈거라 샌드웜(2)는 갈 길 가면 됨.
 		return next_pos;
 	}
 	return next_pos;
@@ -800,7 +821,6 @@ void sw2_move(void) {
 	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = sw2_obj.repr;
 	sw2_obj.next_move_time = sys_clock + sw2_obj.move_period;
 }
-
 
 
 // [ 모래 폭풍 ]

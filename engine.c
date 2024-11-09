@@ -838,7 +838,7 @@ void sw2_move(void) {
 }
 
 
-// [ 葛贰 气浅 ]
+// [ 葛贰 气浅 (X) ]
 
 POSITION sand_wind_next_pos(void) {
 	// 葛贰 气浅 积己 困摹

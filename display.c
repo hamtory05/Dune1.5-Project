@@ -8,7 +8,7 @@
 #include "display.h"
 #include "io.h"
 
-// 출력할 내용들의 좌상단(topleft) 좌표
+// [ 출력할 내용들의 좌상단(topleft) 좌표 ]
 const POSITION resource_pos = { 0, 0 };
 const POSITION map_pos = { 1, 0 };
 
@@ -22,6 +22,7 @@ const POSITION system_mes_pos[7] = { {27, 0},{26, 0},{25, 0},{24, 0},{23, 0},{22
 const POSITION order_pos = { 20, 63 };
 const POSITION order_mes_pos[4] = { {21, 63}, {22, 63}, {23, 63}, {24, 63} };
 
+// [ buf ]
 char backbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 char frontbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 
@@ -36,6 +37,7 @@ char sysmes_frontbuf[SYSMES_HEIGHT][SYSMES_WIDTH] = { 0 };
 char order_backbuf[ORDER_HEIGHT][ORDER_WIDTH] = { 0 };
 char order_frontbuf[ORDER_HEIGHT][ORDER_WIDTH] = { 0 };
 
+// [ 함수 정의 ]
 void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP_WIDTH]);
 void display_resource(RESOURCE resource);
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]);
@@ -58,11 +60,11 @@ void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]);
 void reset_order_messages();
 void clear_window(char buffer[][STATE_WIDTH], POSITION base_pos, int height, int width);
 
+// [ 변수 정의 ]
 char save_name_for_order[2];
 char* order_message[4];
 char* save_system_message[7] = { NULL };
 char* send_system_message[1];
-
 
 const int dRow[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
 const int dCol[] = { 0, -1, -1, -1, 0, 1, 1, 1 };
@@ -232,6 +234,7 @@ void p_building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_H
 
 // =================================== [ DISPLAY ] ======================================= //
 
+// [ Display 메인 함수 ]
 void display(
 	RESOURCE resource,
 	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
@@ -244,13 +247,13 @@ void display(
 	display_resource(resource);
 	display_map(map, check_friend);
 	display_cursor(cursor, check_friend);
-	// NEW FUNC
 	p_building(map, check_friend);
 	display_state_map(state_map);
 	display_sysmes_map(sysmes_map);
 	display_order_map(order_map);
 }
 
+// [ 화면에 자원, 인구수 출력하는 함수 ]
 void display_resource(RESOURCE resource) {
 	set_color(COLOR_DEFAULT);
 	gotoxy(resource_pos);
@@ -260,7 +263,7 @@ void display_resource(RESOURCE resource) {
 	);
 }
 
-// subfunction of draw_map()
+// [ Display 기본 틀 함수 ]
 void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP_WIDTH]) {
 	for (int i = 0; i < MAP_HEIGHT; i++) {
 		for (int j = 0; j < MAP_WIDTH; j++) {
@@ -273,6 +276,7 @@ void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP
 	}
 }
 
+// [ 화면에 건물 및 유닛을 보여주는 함수 ]
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	project(map, backbuf);
 
@@ -342,7 +346,8 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 	}
 }
 
-// ==== [ 커서 범위 함수 ] ====
+
+/* ======================================= [ 커서 범위 함수 ] ======================================= */
 
 // [ 커서 색깔 변경 함수 ]
 void set_cursor_color(POSITION pos, char ch) {
@@ -408,7 +413,7 @@ void display_cursor(CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 }	
 
 
-// ==== [ 기본 틀 출력 함수 ] ====
+/* ======================================= [ 기본 틀 출력 함수 ] ======================================= */
 
 // [ 상태창 기본 틀 함수 ] 
 void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]) {
@@ -438,7 +443,6 @@ void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 	}
 }
 
-
 // [ 시스템창 기본 틀 함수 ]
 void sysmes_project(char src[SYSMES_HEIGHT][SYSMES_WIDTH], char dest[SYSMES_HEIGHT][SYSMES_WIDTH]) {
 	for (int i = 0; i < SYSMES_HEIGHT; i++) {
@@ -466,7 +470,6 @@ void display_sysmes_map(char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
 		}
 	}
 }
-
 
 // [ 명령창 기본 틀 함수 ]
 void order_project(char src[ORDER_HEIGHT][ORDER_WIDTH], char dest[ORDER_HEIGHT][ORDER_WIDTH]) {
@@ -497,7 +500,13 @@ void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]) {
 }
 
 
-// ==== [ 각종 명령어 함수 ] ====
+/* ======================================= [ 시스템 메시지 함수 & 초기화 함수 ] ======================================= */
+
+// [ 명령 메시지 초기화 및 명령 변수 초기화 ]
+void reset_order_messages() {
+	for (int i = 0; i < 2; i++) save_name_for_order[i] = ' ';
+	for (int i = 0; i < 4; i++) order_message[i] = 0;
+}
 
 // [ 상태, 명령창 초기화 함수 ]
 void clear_window(char buffer[][STATE_WIDTH], POSITION base_pos, int height, int width) {
@@ -509,11 +518,36 @@ void clear_window(char buffer[][STATE_WIDTH], POSITION base_pos, int height, int
 	}
 }
 
-// [ 명령 메시지 초기화 및 명령 변수 초기화 ]
-void reset_order_messages() {
-	for (int i = 0; i < 2; i++) save_name_for_order[i] = ' ';
-	for (int i = 0; i < 4; i++) order_message[i] = 0;
+// // [ 시스템 메시지 초기화 함수 ]
+void clear_sysmes_frame(char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
+	for (int i = 1; i < SYSMES_HEIGHT - 1; i++) {
+		for (int j = 1; j < SYSMES_WIDTH - 1; j++) {
+			POSITION pos = { i, j };
+			printc(padd(sysmes_pos, pos), sysmes_backbuf[i][j], COLOR_BLACK);
+		}
+	}
 }
+
+// [ 시스템 메시지 출력 ]
+void p_system_message(char* new_message, char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
+	// [ 메시지를 위로 한 칸씩 밀기 ]
+	for (int i = 6; i > 0; i--) {
+		save_system_message[i] = save_system_message[i - 1];
+	}
+	save_system_message[0] = new_message;
+
+	// [ 시스템 메시지 초기화 후 메시지 출력 ]
+	clear_sysmes_frame(sysmes_map);
+	POSITION pos_system = { 0, 1 };
+	for (int i = 0; i < 7; i++) {
+		if (save_system_message[i] != NULL) {
+			prints(padd(system_mes_pos[i], pos_system), save_system_message[i]);
+		}
+	}
+}
+
+
+/* ======================================= [ 각종 키 명령어 함수 ] ======================================= */
 
 // [ 스페이스 바 키를 눌렀을 때 ]
 void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
@@ -609,7 +643,6 @@ void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_H
 	clear_window(order_backbuf, order_pos, ORDER_HEIGHT, ORDER_WIDTH);
 }
 
-
 // [ 하베스터 생산 H키를 눌렀을 때 ]
 void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH],
 	int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
@@ -644,35 +677,6 @@ void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char 
 		}
 	}
 }
-
-// [ 시스템 메시지 초기화 함수 ]
-void clear_sysmes_frame(char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
-	for (int i = 1; i < SYSMES_HEIGHT - 1; i++) {
-		for (int j = 1; j < SYSMES_WIDTH - 1; j++) {
-			POSITION pos = { i, j };
-			printc(padd(sysmes_pos, pos), sysmes_backbuf[i][j], COLOR_BLACK);
-		}
-	}
-}
-
-// [ 시스템 메시지 출력 ]
-void p_system_message(char* new_message, char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
-	// [ 메시지를 위로 한 칸씩 밀기 ]
-	for (int i = 6; i > 0; i--) {
-		save_system_message[i] = save_system_message[i - 1];
-	}
-	save_system_message[0] = new_message;
-
-	// [ 시스템 메시지 초기화 후 메시지 출력 ]
-	clear_sysmes_frame(sysmes_map);
-	POSITION pos_system = { 0, 1 };
-	for (int i = 0; i < 7; i++) {
-		if (save_system_message[i] != NULL) {
-			prints(padd(system_mes_pos[i], pos_system), save_system_message[i]);
-		}
-	}
-}
-
 
 // [ B키를 눌렀을 때 ]
 void press_b(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {

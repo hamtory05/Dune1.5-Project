@@ -142,7 +142,7 @@ int main(void) {
 		KEY key = get_key();
 
 		// sys_clock값에 따라 커서 여러칸 이동 변수 초기화
-		if (sys_clock % 90 == 0) {
+		if (sys_clock % 110 == 0) {
 			move_count = 0; // 커서가 1칸 움직이는지 3칸 움직이는지 확인
 			for (int i = 0; i < 2; i++) {
 				move_check[i] = 0; // 3칸 움직이는 커서일 때, 동일한 방향키를 두번 눌렀는지 확인
@@ -558,7 +558,13 @@ POSITION sw1_next_pos(void) {
 		}
 		return next_pos;
 	}
-	return next_pos;
+	else {
+		if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
+			1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2) {
+
+			return next_pos; 
+		}
+	}
 }
 
 void sw1_move(void) {
@@ -586,9 +592,16 @@ void sw1_move(void) {
 	if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'H' && check_friend[sw1_obj.pos.row][sw1_obj.pos.column] == 1) {
 		send_system_message[0] = "샌드웜이 아군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
+		
+		//// 임시로 repr 변경 (원래는 샌드웜이 밟고 지나가면 사라지는데 나중에 하베스터 움직임 추가할 때 map상에서는 ' '여도 repr 상태는 H니까 하베스터가 움지깅게 되면 다시 H가 출력될것임 이건 나중에 추가 및 수정 해야할듯?)
+		//if (f_hav_obj.pos.row == sw1_obj.pos.row && f_hav_obj.pos.column == sw1_obj.pos.column) {
+		//	f_hav_obj.repr = ' ';
+		//}
+	
+		// [ 다음 이동 유닛 결정 ] // 지금은 유닛이 하베스터 밖에 없기도 하고 구체적인 구조체가 짜여있지않아서 오류가 발생하므로 임시로 2,4 원래 자리로 해놓았음.
+		POSITION new_dest = { 2, 4 }; 
+		sw1_obj.dest = new_dest; 
 
-		// 임시로 repr 변경
-		f_hav_obj.repr = ' ';
 	}
 
 	// [ 적군 하베스터와 만났을 때 (미완성) ]
@@ -596,8 +609,8 @@ void sw1_move(void) {
 		send_system_message[0] = "샌드웜이 적군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
-		// 임시로 repr 변경
-		e_hav_obj.repr = ' ';
+		//// 임시로 repr 변경
+		//e_hav_obj.repr = ' ';
 	}
 
 	// [ 프레멘과 만났을 때 (아직 구현 X) ]
@@ -773,8 +786,12 @@ void sw2_move(void) {
 		send_system_message[0] = "샌드웜이 아군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
-		// 임시로 repr 변경
-		f_hav_obj.repr = ' ';
+		// [ 다음 이동 유닛 결정 ] // 지금은 유닛이 하베스터 밖에 없기도 하고 구체적인 구조체가 짜여있지않아서 오류가 발생하므로 임시로 2,4 원래 자리로 해놓았음.
+		POSITION new_dest = { 2, 4 };
+		sw1_obj.dest = new_dest;
+
+		//// 임시로 repr 변경
+		//f_hav_obj.repr = ' ';
 	}
 
 	// [ 적군 하베스터와 만났을 때 (미완성) ]
@@ -782,8 +799,12 @@ void sw2_move(void) {
 		send_system_message[0] = "샌드웜이 적군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
-		// 임시로 repr 변경
-		e_hav_obj.repr = ' ';
+		// [ 다음 이동 유닛 결정 ] // 지금은 유닛이 하베스터 밖에 없기도 하고 구체적인 구조체가 짜여있지않아서 오류가 발생하므로 임시로 2,4 원래 자리로 해놓았음.
+		POSITION new_dest = { 2, 4 };
+		sw1_obj.dest = new_dest;
+
+		//// 임시로 repr 변경
+		//e_hav_obj.repr = ' ';
 	}
 
 	// [ 프레멘과 만났을 때 (아직 구현 X) ]

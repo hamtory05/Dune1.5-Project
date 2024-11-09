@@ -238,10 +238,6 @@ void display(
 	display_state_map(state_map);
 	display_sysmes_map(sysmes_map);
 	display_order_map(order_map);
-	// display_system_message()
-	// display_object_info()
-	// display_commands()
-	// ...
 }
 
 void display_resource(RESOURCE resource) {
@@ -362,9 +358,7 @@ void display_cursor(CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	POSITION prev = cursor.previous;
 	POSITION curr = cursor.current;
 
-	
-
-	char ch = frontbuf[prev.row][prev.column]; 
+	char ch = frontbuf[prev.row][prev.column];
 	printc(padd(map_pos, prev), ch, COLOR_BLACK);
 
 	// [ 커서가 지나간 자리의 색이 지워지지 않게 변경 ]
@@ -374,9 +368,39 @@ void display_cursor(CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	ch = frontbuf[curr.row][curr.column];
 	printc(padd(map_pos, curr), ch, COLOR_BLACK);
 
-	if (ch == 'P' && check_friend[curr.row][curr.column] == 1) {
+	// [ 커서 범위 설정 ]
+	// < 커서가 장판을 가르킬 때 >
+	if (frontbuf[curr.row][curr.column] == 'P') {
+		if (frontbuf[curr.row - 1][curr.column - 1] == 'P') {
+
+		}
+		else if (frontbuf[curr.row][curr.column - 1] == 'P') {
+
+		} 
+		else if (frontbuf[curr.row + 1][curr.column - 1] == 'P') {
 		
+		}
+		else if (frontbuf[curr.row - 1][curr.column] == 'P') {
+
+		}
+		else if (frontbuf[curr.row + 1][curr.column] == 'P') {
+
+		}
+		else if (frontbuf[curr.row - 1][curr.column + 1] == 'P') {
+
+		}
+		else if (frontbuf[curr.row][curr.column + 1] == 'P') {
+
+		}
+		else if (frontbuf[curr.row + 1][curr.column + 1] == 'P') {
+
+		}
 	}
+	// < 커서가 장판 외 다른 곳을 가르킬 때 >
+	else {
+
+	}
+
 
 }	
 
@@ -624,8 +648,9 @@ void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char 
 			// [ 하베스터를 생산할 수 있을 때 ]
 			if (resource->spice >= 5 && resource->population + 5 <= resource->population_max) {
 				// [ 하베스터 생산 ] 
-				map[1][14][2] = 'H';
-				check_friend[14][2] = 1;
+				OBJECT_SAMPLE f_hav2_obj = { { 14, 2 }, { MAP_HEIGHT - 2, MAP_WIDTH - 2 }, 'H', 2000, 2000, COLOR_DEFAULT + 16 };
+				map[1][f_hav2_obj.pos.row][f_hav2_obj.pos.column] = 'H';
+				check_friend[f_hav2_obj.pos.row][f_hav2_obj.pos.column] = 1;
 				send_system_message[0] = "하베스터가 1기가 생산되었습니다.";
 				p_system_message(send_system_message[0], sysmes_map);
 				

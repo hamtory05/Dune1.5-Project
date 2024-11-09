@@ -644,7 +644,7 @@ void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_H
 }
 
 // [ 하베스터 생산 H키를 눌렀을 때 ]
-void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH],
+void press_h(RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH],
 	int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	// [ 아군 본진 --> 하베스터 생산 ] [ 하베스터 생산 비용 5, 인구수 5 ]
 	if (save_name_for_order[0] == 'B' && save_name_for_order[1] == 'F') {
@@ -659,11 +659,11 @@ void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char 
 
 			// [ 시스템 메시지 추가 ]
 			p_system_message("하베스터가 1기가 생산되었습니다.", sysmes_map);
-				
+
 			// [ 자원감소, 인구수 증가 ]
 			resource->spice -= 5;
 			resource->population += 5;
-				
+
 		}
 		// [ 하베스터를 생산할 수 없을 때 ]
 		else {
@@ -671,14 +671,15 @@ void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char 
 				// [ 시스템 메시지 추가 ]
 				p_system_message("생산 자원이 부족하여 하베스터를 생산할 수 없습니다.", sysmes_map);
 			}
-			else if (resource->population  + 5 > resource->population_max) {
+			else if (resource->population + 5 > resource->population_max) {
 				// [ 시스템 메시지 추가 ]
 				p_system_message("인구수가 부족하여 하베스터를 생산할 수 없습니다.", sysmes_map);
+			}
 		}
 	}
 }
 
 // [ B키를 눌렀을 때 ]
 void press_b(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
-	
+
 }

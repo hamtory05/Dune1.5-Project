@@ -133,15 +133,15 @@ int main(void) {
 	init();
 	intro();
 	display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend);
-
-	send_system_message[0] = "게임이 시작되었습니다.";
-	p_system_message(send_system_message[0], sysmes_map);
+	
+	// [ 시스템 메시지 추가 ]
+	p_system_message("게임이 시작되었습니다.", sysmes_map);
 
 	while (1) {
-		// loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인
+		// [ loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인 ]
 		KEY key = get_key();
 
-		// sys_clock값에 따라 커서 여러칸 이동 변수 초기화
+		// [ sys_clock 값에 따라 커서 여러칸 이동 변수 초기화 ]
 		if (sys_clock % 110 == 0) {
 			move_count = 0; // 커서가 1칸 움직이는지 3칸 움직이는지 확인
 			for (int i = 0; i < 2; i++) {
@@ -149,7 +149,7 @@ int main(void) {
 			}
 		}
 
-		// 키 입력이 있을 때, 1칸이동인지, 3칸이동인지 확인
+		// [ 키 입력이 있을 때, 1칸이동인지, 3칸이동인지 확인 ]
 		if (is_arrow_key(key)) {
 			move_count++;
 			if (move_count == 1) {
@@ -167,7 +167,7 @@ int main(void) {
 			}
 		}
 		
-		// 키 입력이 있으면 처리
+		// [ 키 입력이 있으면 처리 ]
 		if (is_arrow_key(key) && move_count == 2 && move_check[0] == move_check[1]) {
 			cursor_move(ktod(key), 1);
 			move_count = 0; // 3칸 이동하고 나서 변수 초기화.
@@ -181,18 +181,18 @@ int main(void) {
 			case k_quit: outro();
 			
 			case k_esc: state_esc(state_map, order_map);
-				send_system_message[0] = "ESC키를 눌렀습니다.";
-				p_system_message(send_system_message[0], sysmes_map);
+				// [ 시스템 메시지 추가 ]
+				p_system_message("ESC키를 눌렀습니다.", sysmes_map);
 				break;
 			
 			case k_space: state_spacebar(map, state_map, cursor, check_friend);
-				send_system_message[0] = "스페이스바를 눌렀습니다.";
-				p_system_message(send_system_message[0], sysmes_map);
+				// [ 시스템 메시지 추가 ]
+				p_system_message("스페이스바를 눌렀습니다.", sysmes_map);
 				break;
 
 			case k_h: press_h(&resource, map, sysmes_map, check_friend);
-				send_system_message[0] = "H키를 눌렀습니다.";
-				p_system_message(send_system_message[0], sysmes_map);
+				// [ 시스템 메시지 추가 ]
+				p_system_message("H키를 눌렀습니다.", sysmes_map);
 				break;
 
 			case k_none:
@@ -201,32 +201,37 @@ int main(void) {
 			}
 		}
 	
-		// 샘플 오브젝트 동작
+		// [ 오브젝트 동작 ]
 		d_eagle_move();
 		sw1_move();
 		sw2_move();
 		//sand_wind_move();
 		
 
-		// 화면 출력
+		// [ 화면 출력 ]
 		display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend);
 		Sleep(TICK);
 		sys_clock += 10;
 	}
 }
 
-/* ================= subfunctions =================== */
+
+/* ================= [ subfunctions ] =================== */
+
+// [ 인트로 ]
 void intro(void) {
 	printf("DUNE 1.5\n");
 	Sleep(2000);
 	system("cls");
 }
 
+// [ 아웃트로 ]
 void outro(void) {
 	printf("exiting...\n");
 	exit(0);
 }
 
+// [ INIT ]
 void init(void) {
 	// layer 0(map[0])에 지형 생성
 	for (int j = 0; j < MAP_WIDTH; j++) {
@@ -309,9 +314,7 @@ void init(void) {
 	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = sw2_obj.repr; // 샌드웜 2
 }
 
-
-
-// (가능하다면) 지정한 방향으로 커서 이동
+// [ 커서 이동 ]
 void cursor_move(DIRECTION dir, int move) {
 	
 	POSITION curr = cursor.current;
@@ -334,7 +337,7 @@ void cursor_move(DIRECTION dir, int move) {
 }
 
 
-/* ================= sample object movement =================== */
+/* ================= [ 유닛 샘플 함수 ] =================== */
 POSITION sample_obj_next_position(void) {
 	// 현재 위치와 목적지를 비교해서 이동 방향 결정	
 	POSITION diff = psub(obj.dest, obj.pos);
@@ -393,6 +396,8 @@ void sample_obj_move(void) {
 }
 
 
+/* ================= [유닛 움직임 함수 ] =================== */
+
 // [ 사막 독수리 ]
 POSITION d_eagle_next_pos(void) {
 	// 현재 위치와 목적지를 비교해서 이동 방향 결정	
@@ -435,6 +440,7 @@ POSITION d_eagle_next_pos(void) {
 	}
 }
 
+// [ 사막 독수리 움직임 함수 ]
 void d_eagle_move(void) {
 	if (sys_clock <= d_eagle.next_move_time) {
 		return;
@@ -447,18 +453,13 @@ void d_eagle_move(void) {
 	d_eagle.next_move_time = sys_clock + d_eagle.move_period;
 }
 
-
 // [ 샌드웜 (1) ]
 POSITION sw1_next_pos(void) {
-	// 현재 위치와 목적지를 비교해서 이동 방향 결정	
+	// [ 현재 위치와 목적지를 비교해서 이동 방향 결정 ]
 	POSITION diff = psub(sw1_obj.dest, sw1_obj.pos);
 	DIRECTION dir;
 
-	
-
-	// [ 목적지는 가장 가까운 유닛 ]
-	
-	// 가장 가까운 유닛을 찾아서 그 유닛의 행렬값을 new_dest에 지정
+	// [ 가장 가까운 유닛을 찾아서 그 유닛의 행렬값을 new_dest에 지정 ]
 	double check_close = 61.0;
 	int move_i = 2, move_j = 4;
 	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
@@ -474,15 +475,13 @@ POSITION sw1_next_pos(void) {
 	POSITION new_dest = { move_i, move_j };
 	sw1_obj.dest = new_dest;
 
-
-	// 가로축, 세로축 거리를 비교해서 더 먼 쪽 축으로 이동
+	// [ 가로축, 세로축 거리를 비교해서 더 먼 쪽 축으로 이동 ]
 	if (abs(diff.row) >= abs(diff.column)) {
 		dir = (diff.row >= 0) ? d_down : d_up;
 	}
 	else {
 		dir = (diff.column >= 0) ? d_right : d_left;
 	}
-
 
 	// [ 샌드웜 이동 ]
 	POSITION next_pos = pmove(sw1_obj.pos, dir);
@@ -561,29 +560,30 @@ POSITION sw1_next_pos(void) {
 	return next_pos; 
 }
 
+// [샌드웜 (1) 움직임 함수 ]
 void sw1_move(void) {
-	// 움직이는 주기
+	// [ 움직이는 주기 ]
 	if (sys_clock <= sw1_obj.next_move_time) {
 		return;
 	}
-	// 샌드웜(1) layer1 (map[1])에 저장
+	// [ 샌드웜(1) layer1 (map[1])에 저장 ]
 	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = -1;
 
-	// 10/300 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
+	// [ 10/300 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤) ]
 	int r = rand() % 299;
 	if (r < 9) {
+		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 스파이스 매장지를 생성했습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
 		map[0][sw1_obj.pos.row][sw1_obj.pos.column] = spice_number[r];
 	}
-
 	sw1_obj.pos = sw1_next_pos();
-
 
 	// [ 샌드웜 잡아먹기 ]
 	// [ 아군 하베스터와 만났을 때 (미완성) ]
 	if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'H' && check_friend[sw1_obj.pos.row][sw1_obj.pos.column] == 1) {
+		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 아군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 		
@@ -600,6 +600,7 @@ void sw1_move(void) {
 
 	// [ 적군 하베스터와 만났을 때 (미완성) ]
 	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'H' && check_friend[sw1_obj.pos.row][sw1_obj.pos.column] == 2) {
+		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 적군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
@@ -643,16 +644,13 @@ void sw1_move(void) {
 	sw1_obj.next_move_time = sys_clock + sw1_obj.move_period;
 }
 
-
 // [ 샌드웜 (2) ]
 POSITION sw2_next_pos(void) {
-	// 현재 위치와 목적지를 비교해서 이동 방향 결정	
+	// [ 현재 위치와 목적지를 비교해서 이동 방향 결정 ]
 	POSITION diff = psub(sw2_obj.dest, sw2_obj.pos);
 	DIRECTION dir;
 
-	// [ 목적지는 가장 가까운 유닛 ]
-
-	// 가장 가까운 유닛을 찾아서 그 유닛의 행렬값을 new_dest에 지정
+	// [ 가장 가까운 유닛을 찾아서 그 유닛의 행렬값을 new_dest에 지정 ]
 	double check_close = 61.0;
 	int move_i = 12, move_j = 55;
 	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
@@ -668,8 +666,7 @@ POSITION sw2_next_pos(void) {
 	POSITION new_dest = { move_i, move_j };
 	sw2_obj.dest = new_dest;
 
-
-	// 가로축, 세로축 거리를 비교해서 더 먼 쪽 축으로 이동
+	// [ 가로축, 세로축 거리를 비교해서 더 먼 쪽 축으로 이동 ]
 	if (abs(diff.row) >= abs(diff.column)) {
 		dir = (diff.row >= 0) ? d_down : d_up;
 	}
@@ -754,29 +751,31 @@ POSITION sw2_next_pos(void) {
 	return next_pos;
 }
 
+// [ 샌드웜 (2) 움직임 함수 ]
 void sw2_move(void) {
-	// 움직이는 주기
+	// [ 움직이는 주기 ]
 	if (sys_clock <= sw2_obj.next_move_time) {
 		return;
 	}
-	// 샌드웜(2) layer1 (map[1])에 저장
+
+	// [ 샌드웜(2) layer1 (map[1])에 저장 ]
 	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = -1;
 
-	// 10/300 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤)
+	// [ 10/300 확률로 배설 --> 스파이스 매장지 생성 (매장량 1 ~ 9 랜덤) ]
 	int r = rand() % 299;
 	if (r < 9) {
+		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 스파이스 매장지를 생성했습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
 		map[0][sw2_obj.pos.row][sw2_obj.pos.column] = spice_number[r];
 	}
-
 	sw2_obj.pos = sw2_next_pos();
-
 
 	// [ 샌드웜 잡아먹기 ]
 	// [ 아군 하베스터와 만났을 때 (미완성) ]
 	if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'H' && check_friend[sw2_obj.pos.row][sw2_obj.pos.column] == 1) {
+		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 아군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
@@ -790,6 +789,7 @@ void sw2_move(void) {
 
 	// [ 적군 하베스터와 만났을 때 (미완성) ]
 	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'H' && check_friend[sw2_obj.pos.row][sw2_obj.pos.column] == 2) {
+		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 적군 하베스터를 잡아먹었습니다.";
 		p_system_message(send_system_message[0], sysmes_map);
 
@@ -837,9 +837,7 @@ void sw2_move(void) {
 	sw2_obj.next_move_time = sys_clock + sw2_obj.move_period;
 }
 
-
 // [ 모래 폭풍 (X) ]
-
 POSITION sand_wind_next_pos(void) {
 	// 모래 폭풍 생성 위치
 	int np_c = rand() % 14 + 3; // 높이 3 ~ 14 사이의 무작위 수
@@ -898,7 +896,6 @@ POSITION sand_wind_next_pos(void) {
 	return next_pos1, next_pos2, next_pos3, next_pos4;
 
 }
-
 void sand_wind_move(void) {
 	// 움직이는 주기
 	if (sys_clock <= sand_wind.next_move_time) {
@@ -1095,7 +1092,3 @@ void sand_wind_move(void) {
 
 	sand_wind.next_move_time = sys_clock + sand_wind.move_period;
 }
-
-
-
-

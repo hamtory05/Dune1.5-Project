@@ -658,7 +658,7 @@ void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char 
 			check_friend[f_hav2_obj.pos.row][f_hav2_obj.pos.column] = 1;
 
 			// [ 시스템 메시지 추가 ]
-			add_system_message("하베스터가 1기가 생산되었습니다.", sysmes_map);
+			p_system_message("하베스터가 1기가 생산되었습니다.", sysmes_map);
 				
 			// [ 자원감소, 인구수 증가 ]
 			resource->spice -= 5;
@@ -669,11 +669,11 @@ void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char 
 		else {
 			if (resource->spice < 5) {
 				// [ 시스템 메시지 추가 ]
-				add_system_message("생산 자원이 부족하여 하베스터를 생산할 수 없습니다.", sysmes_map);
+				p_system_message("생산 자원이 부족하여 하베스터를 생산할 수 없습니다.", sysmes_map);
 			}
 			else if (resource->population  + 5 > resource->population_max) {
 				// [ 시스템 메시지 추가 ]
-				add_system_message("인구수가 부족하여 하베스터를 생산할 수 없습니다.", sysmes_map);
+				p_system_message("인구수가 부족하여 하베스터를 생산할 수 없습니다.", sysmes_map);
 		}
 	}
 }

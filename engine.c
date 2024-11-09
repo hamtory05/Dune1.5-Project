@@ -558,13 +558,7 @@ POSITION sw1_next_pos(void) {
 		}
 		return next_pos;
 	}
-	else {
-		if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
-			1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2) {
-
-			return next_pos; 
-		}
-	}
+	return next_pos; 
 }
 
 void sw1_move(void) {

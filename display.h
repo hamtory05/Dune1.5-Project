@@ -15,7 +15,7 @@
 #define COLOR_CURSOR	15
 #define COLOR_RESOURCE  112
 #define COLOR_BLACK 15
-
+#define CURSOR_COLOR 90
 
 
 // 지금은 자원, 맵, 커서만 표시
@@ -39,7 +39,7 @@ void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_H
 void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH],
 	int check_friend[MAP_HEIGHT][MAP_WIDTH]);
 
-void p_system_message(char str[], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]);
+void p_system_message(char* new_message, char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]);
 
 void press_b(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]);
 

@@ -40,21 +40,32 @@ void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP
 void display_resource(RESOURCE resource);
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]);
 void display_cursor(CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH]);
+void set_cursor_color(POSITION pos, char ch);
+void highlight_P_area(POSITION pos, int check_friend[MAP_HEIGHT][MAP_WIDTH]);
+void clear_cursor_area(POSITION pos, int check_friend[MAP_HEIGHT][MAP_WIDTH]);
+void reset_to_original_color(POSITION pos);
 
 void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]);
 void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]);
 
 void sysmes_project(char src[SYSMES_HEIGHT][SYSMES_WIDTH], char dest[SYSMES_HEIGHT][SYSMES_WIDTH]);
 void display_sysmes_map(char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]);
+void clear_sysmes_frame(char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]);
 
 void order_project(char src[ORDER_HEIGHT][ORDER_WIDTH], char dest[ORDER_HEIGHT][ORDER_WIDTH]);
 void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]);
 
+void reset_order_messages();
+void clear_window(char buffer[][STATE_WIDTH], POSITION base_pos, int height, int width);
 
 char save_name_for_order[2];
 char* order_message[4];
 char* save_system_message[7] = { NULL };
 char* send_system_message[1];
+
+
+const int dRow[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+const int dCol[] = { 0, -1, -1, -1, 0, 1, 1, 1 };
 
 // =================================== [ 건물 ] ======================================= //
 
@@ -267,143 +278,137 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 
 	for (int i = 0; i < MAP_HEIGHT; i++) {
 		for (int j = 0; j < MAP_WIDTH; j++) {
-			if (frontbuf[i][j] != backbuf[i][j]) {
-				POSITION pos = { i, j };
-				
-				// === [ 건물 ] === //
-				
-				// [ 아군 본진 ]
-				if (backbuf[i][j] == 'B' && check_friend[i][j] == 1) {
-					// < 파란색 배경 >
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 16);
-					colorbuf[i][j] = COLOR_DEFAULT + 16;
-				}
+			if (frontbuf[i][j] == backbuf[i][j]) continue;
 
-				// [ 적군 본진 ] 
-				else if (backbuf[i][j] == 'B' && check_friend[i][j] == 2) {
-					// < 빨간색 배경 >
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 64);
-					colorbuf[i][j] = COLOR_DEFAULT + 64;
-				}
+			POSITION pos = { i, j };
+			char cell = backbuf[i][j];
+			int color = COLOR_RESOURCE;
 
-				// [ 아군 장판 ]
-				else if (backbuf[i][j] == 'P' && check_friend[i][j] == 1) {
-					// < 검은색 배경 >
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_BLACK);
-					colorbuf[i][j] = COLOR_BLACK;
+			// === [ 건물 및 유닛 색상 설정 ] ===
+			switch (cell) {
+			// [ 본진 ]
+			case 'B':  
+				if (check_friend[i][j] == 1) {
+					color = COLOR_DEFAULT + 16;  // 아군 본진 (파란색 배경) 
 				}
+				else if (check_friend[i][j] == 2) {
+					color = COLOR_DEFAULT + 64;  // 적군 본진 (빨간색 배경)
+				}
+				break;
+			// [ 장판 ]
+			case 'P':  
+				color = COLOR_BLACK;  
+				break;
 
-				// [ 적군 장판 ]
-				else if (backbuf[i][j] == 'P' && check_friend[i][j] == 2) {
-					// < 검은색 배경 >
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_BLACK);
-					colorbuf[i][j] = COLOR_BLACK;
-				}
+			// [ 스파이스 ]
+			case '1': case '2': case '3': case '4': case '5':
+			case '6': case '7': case '8': case '9': 
+				color = COLOR_DEFAULT + 48;  // 주황색 배경
+				break;
 
-				// [ 스파이스 ]
-				else if (backbuf[i][j] == '1' || backbuf[i][j] == '2' || backbuf[i][j] == '3' || backbuf[i][j] == '4' || \
-					backbuf[i][j] == '5' || backbuf[i][j] == '6' || backbuf[i][j] == '7' || backbuf[i][j] == '8' || backbuf[i][j] == '9') {
-					// < 주황색 배경 >
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 48);
-					colorbuf[i][j] = COLOR_DEFAULT + 48;
+			// [ 바위 ]
+			case 'R': 
+				color = COLOR_DEFAULT;
+				break;
+			
+			// [ 하베스터 ]
+			case 'H':  
+				if (check_friend[i][j] == 1) {
+					color = COLOR_DEFAULT + 16;  // 아군 하베스터 (파란색)
 				}
+				else if (check_friend[i][j] == 2) {
+					color = COLOR_DEFAULT + 64;  // 적군 하베스터 (빨간색)
+				}
+				break;
 
-				// [ 바위 ]
-				else if (backbuf[i][j] == 'R') {
-					// < 회색 배경 >      아직 색 못 찾음
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT);
-					colorbuf[i][j] = COLOR_DEFAULT;
-				}
+			// [ 샌드웜 ]
+			case 'W': 
+				color = COLOR_DEFAULT + 96;
+				break;
+			
+			// [ 사막 독수리 ]
+			case 'E': 
+				color = COLOR_DEFAULT + 17;
+				break;
 
-				// ==== [ 유닛 ] ====
-
-				// < 아군 하베스터 >
-				else if (backbuf[i][j] == 'H' && check_friend[i][j] == 1) {
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 16);
-					colorbuf[i][j] = COLOR_DEFAULT + 16;
-					check_friend[i][j] = 1;
-				}
-
-				// < 적군 하베스터 >
-				else if (backbuf[i][j] == 'H' && check_friend[i][j] == 2) {
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 64);
-					colorbuf[i][j] = COLOR_DEFAULT + 64;
-					check_friend[i][j] = 2;
-				}
-
-				// < 샌드웜 >
-				else if (backbuf[i][j] == 'W') {
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 96); 
-					colorbuf[i][j] = COLOR_DEFAULT + 96;
-				}
-
-				// < 사막 독수리 >
-				else if (backbuf[i][j] == 'E') {
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_DEFAULT + 17);
-					colorbuf[i][j] = COLOR_DEFAULT + 17;
-				}
-				// < 기타 >
-				else {
-					printc(padd(map_pos, pos), backbuf[i][j], COLOR_RESOURCE);
-					colorbuf[i][j] = COLOR_RESOURCE;
-				}
+			default:
+				break;  // 기타 - COLOR_RESOURCE로 처리됨
 			}
-			frontbuf[i][j] = backbuf[i][j];
+
+			printc(padd(map_pos, pos), cell, color);
+			colorbuf[i][j] = color;
+			frontbuf[i][j] = cell;
 		}
 	}
 }
 
-// frontbuf[][]에서 커서 위치의 문자를 색만 바꿔서 그대로 다시 출력
+// ==== [ 커서 범위 함수 ] ====
+
+// [ 커서 색깔 변경 함수 ]
+void set_cursor_color(POSITION pos, char ch) {
+	printc(padd(map_pos, pos), ch, CURSOR_COLOR);
+}
+
+// [ 커서 잔상색깔 해결 함수 ]
+void reset_to_original_color(POSITION pos) {
+	int color = colorbuf[pos.row][pos.column];
+	char ch = frontbuf[pos.row][pos.column];
+	printc(padd(map_pos, pos), ch, color);
+}
+
+// [ 커서 잔상색깔 해결 함수 (장판(P) ]
+void clear_cursor_area(POSITION pos, int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
+	if (frontbuf[pos.row][pos.column] == 'P' && check_friend[pos.row][pos.column] == 1) {
+		reset_to_original_color(pos);  // 현재 위치
+		for (int i = 0; i < 8; ++i) {  // 8방향 검사
+			int newRow = pos.row + dRow[i];
+			int newCol = pos.column + dCol[i];
+			if (frontbuf[newRow][newCol] == 'P' && check_friend[pos.row][pos.column] == 1) {
+				POSITION newPos = { newRow, newCol };
+				reset_to_original_color(newPos);
+			}
+		}
+	}
+	else {
+		reset_to_original_color(pos);  // 'P'가 아닌 경우 현재 위치만 복원
+	}
+}
+
+// [ 'P' 영역 색상 변경하는 함수 ]
+void highlight_P_area(POSITION pos, int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
+
+	// 현재 위치가 'P'라면 8방향 탐색
+	if (frontbuf[pos.row][pos.column] == 'P' && check_friend[pos.row][pos.column] == 1) {
+		set_cursor_color(pos, frontbuf[pos.row][pos.column]);  // 현재 위치
+		for (int i = 0; i < 8; ++i) {  // 8방향 검사
+			int newRow = pos.row + dRow[i];
+			int newCol = pos.column + dCol[i];
+			if (frontbuf[newRow][newCol] == 'P' && check_friend[pos.row][pos.column] == 1) {
+				POSITION newPos = { newRow, newCol };
+				set_cursor_color(newPos, frontbuf[newRow][newCol]);
+			}
+		}
+	}
+	else {
+		// 'P'가 아니면 현재 위치만 커서 색으로 변경
+		printc(padd(map_pos, pos), frontbuf[pos.row][pos.column], COLOR_BLACK);
+	}
+}
+
+// [ 메인 커서 출력 함수 ]
 void display_cursor(CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	POSITION prev = cursor.previous;
 	POSITION curr = cursor.current;
+	
+	// [ 커서 원래 색으로 되돌리기 & 장판을 원래 색으로 되돌리기 ] 
+	clear_cursor_area(prev, check_friend); 
 
-	char ch = frontbuf[prev.row][prev.column];
-	printc(padd(map_pos, prev), ch, COLOR_BLACK);
-
-	// [ 커서가 지나간 자리의 색이 지워지지 않게 변경 ]
-	int pre_color = colorbuf[prev.row][prev.column]; // 전 위치의 색깔을 기억
-	printc(padd(map_pos, prev), ch, pre_color); // 지나간 자리를 다시 원래 색으로 변경
-
-	ch = frontbuf[curr.row][curr.column];
-	printc(padd(map_pos, curr), ch, COLOR_BLACK);
-
-	// [ 커서 범위 설정 ]
-	// < 커서가 장판을 가르킬 때 >
-	if (frontbuf[curr.row][curr.column] == 'P') {
-		if (frontbuf[curr.row - 1][curr.column - 1] == 'P') {
-
-		}
-		else if (frontbuf[curr.row][curr.column - 1] == 'P') {
-
-		} 
-		else if (frontbuf[curr.row + 1][curr.column - 1] == 'P') {
-		
-		}
-		else if (frontbuf[curr.row - 1][curr.column] == 'P') {
-
-		}
-		else if (frontbuf[curr.row + 1][curr.column] == 'P') {
-
-		}
-		else if (frontbuf[curr.row - 1][curr.column + 1] == 'P') {
-
-		}
-		else if (frontbuf[curr.row][curr.column + 1] == 'P') {
-
-		}
-		else if (frontbuf[curr.row + 1][curr.column + 1] == 'P') {
-
-		}
-	}
-	// < 커서가 장판 외 다른 곳을 가르킬 때 >
-	else {
-
-	}
-
-
+	// [ 커서 출력 & 장판 색 바꾸기 ]
+	highlight_P_area(curr, check_friend);
 }	
 
+
+// ==== [ 기본 틀 출력 함수 ] ====
 
 // [ 상태창 기본 틀 함수 ] 
 void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]) {
@@ -427,8 +432,6 @@ void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]) {
 				if (state_backbuf[i][j] == '#') {
 					printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_RESOURCE);
 				}
-				
-				
 			}
 			state_frontbuf[i][j] = state_backbuf[i][j];
 		}
@@ -494,148 +497,116 @@ void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]) {
 }
 
 
+// ==== [ 각종 명령어 함수 ] ====
 
-// [ 스페이스바를 눌렀을 때 ]
-void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], 
-	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor,
-	int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
-	POSITION curr = cursor.current;
-	POSITION pos_state = { 0, 1 }; 
-	POSITION pos_order = { 0, 1 };
-
-	// [ 명령창을 위한 변수 초기화 ]
-	for (int i = 0; i < 2; i++) {
-		save_name_for_order[i] = ' ';
-	}
-
-	// [ 상태 & 명령창 초기화 ]
-	for (int i = 1; i < STATE_HEIGHT - 1; i++) {
-		for (int j = 1; j < STATE_WIDTH - 1; j++) {
-			POSITION pos = { i, j }; 
-			printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_BLACK);
-		}
-	}
-	for (int i = 1; i < ORDER_HEIGHT - 1; i++) { 
-		for (int j = 1; j < ORDER_WIDTH - 1; j++) {
+// [ 상태, 명령창 초기화 함수 ]
+void clear_window(char buffer[][STATE_WIDTH], POSITION base_pos, int height, int width) {
+	for (int i = 1; i < height - 1; i++) {
+		for (int j = 1; j < width - 1; j++) {
 			POSITION pos = { i, j };
-			printc(padd(order_pos, pos), order_backbuf[i][j], COLOR_BLACK);
+			printc(padd(base_pos, pos), buffer[i][j], COLOR_BLACK);
 		}
 	}
-
-	// [ 명령 메시지 초기화 ]
-	for (int i = 0; i < 4; i++) { 
-		order_message[i] = 0;
-	}
-	
-
-	// [ 상태 & 명령 출력 ]
-	// < 빈 지형 >
-	if (backbuf[curr.row][curr.column] == ' ') {
-		char state_message[] = "(빈)지형 : 사막 지형";
-		prints(padd(state_mes_pos, pos_state), state_message);
-	}
-	// < 아군 본진 >
-	else if (backbuf[curr.row][curr.column] == 'B' && \
-		(curr.row == 16 || curr.row == 15) && (curr.column == 1 || curr.column == 2)) {
-		save_name_for_order[0] = 'B';
-		save_name_for_order[1] = 'F';
-		char state_message[] = "건물 : 아군 본진";
-		prints(padd(state_mes_pos, pos_state), state_message);
-
-		char state_message2[] = "하베스터를 생산할 수 있다.";
-		prints(padd(state_mes2_pos, pos_state), state_message2);
-
-		order_message[0] = "하베스터 생산 (H / ESC)";
-		prints(padd(order_mes_pos[0], pos_order), order_message[0]);
-	}
-	// < 적군 본진 >
-	else if (backbuf[curr.row][curr.column] == 'B' && check_friend[curr.row][curr.column] == 2) {
-		save_name_for_order[0] = 'B';
-		save_name_for_order[1] = 'E';
-		char state_message[] = "건물 : 적군 본진";
-		prints(padd(state_mes_pos, pos_state), state_message);
-	}
-	// < 아군 장판 >
-	else if (backbuf[curr.row][curr.column] == 'P' && check_friend[curr.row][curr.column] == 1) {
-		save_name_for_order[0] = 'P';
-		save_name_for_order[1] = 'F';
-		char state_message[] = "건물 : 아군 장판";
-		prints(padd(state_mes_pos, pos_state), state_message);
-
-		char state_message2[] = "숙소, 창고, 병영, 은신처를 설치할 수 있다.";
-		prints(padd(state_mes2_pos, pos_state), state_message2);
-
-		order_message[0] = "숙소를 설치하시겠습니까?   (D / ESC)";
-		order_message[1] = "창고를 설치하시겠습니까?   (G / ESC)";
-		order_message[2] = "병영을 설치하시겠습니까?   (B / ESC)";
-		order_message[3] = "은신처를 설치하시겠습니다? (S / ESC)";
-		for (int i = 0; i < 4; i++) {
-			prints(padd(order_mes_pos[i], pos_order), order_message[i]);
-		}
-	}
-	// < 적군 장판 >
-	else if (backbuf[curr.row][curr.column] == 'P' && check_friend[curr.row][curr.column] == 2) {
-		save_name_for_order[0] = 'P';
-		save_name_for_order[1] = 'E';
-		char state_message[] = "건물 : 적군 장판";
-		prints(padd(state_mes_pos, pos_state), state_message);
-	}
-	// < 스파이스 >
-	else if (backbuf[curr.row][curr.column] == '1' || backbuf[curr.row][curr.column] == '2' || backbuf[curr.row][curr.column] == '3' || \
-		backbuf[curr.row][curr.column] == '4' || backbuf[curr.row][curr.column] == '5' || backbuf[curr.row][curr.column] == '6' || \
-		backbuf[curr.row][curr.column] == '7' || backbuf[curr.row][curr.column] == '8' || backbuf[curr.row][curr.column] == '9') {
-		char state_message[] = "건물 : 스파이스";
-		prints(padd(state_mes_pos, pos_state), state_message);
-	}
-	// < 바위 >
-	else if (backbuf[curr.row][curr.column] == 'R') {
-		char state_message[] = "건물 : 바위";
-		prints(padd(state_mes_pos, pos_state), state_message);
-	}
-	// < 아군 하베스터 >
-	else if (backbuf[curr.row][curr.column] == 'H' && colorbuf[curr.row][curr.column] == COLOR_DEFAULT + 16) {
-		char state_message[] = "유닛 : 아군 하베스터";
-		prints(padd(state_mes_pos, pos_state), state_message);
-	}
-	// < 적군 하베스터 >
-	else if (backbuf[curr.row][curr.column] == 'H' && colorbuf[curr.row][curr.column] == COLOR_DEFAULT + 64) {
-		char state_message[] = "유닛 : 적군 하베스터";
-		prints(padd(state_mes_pos, pos_state), state_message);
-	}
-	// < 샌드웜 >
-	else if (backbuf[curr.row][curr.column] == 'W') {
-		char state_message[] = "유닛 : 샌드웜"; 
-		prints(padd(state_mes_pos, pos_state), state_message);
-	}
-
 }
 
+// [ 명령 메시지 초기화 및 명령 변수 초기화 ]
+void reset_order_messages() {
+	for (int i = 0; i < 2; i++) save_name_for_order[i] = ' ';
+	for (int i = 0; i < 4; i++) order_message[i] = 0;
+}
+
+// [ 스페이스 바 키를 눌렀을 때 ]
+void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
+	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor,
+	int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
+
+	// [ 변수 지정 ]
+	POSITION curr = cursor.current;
+	POSITION pos_state = { 0, 1 };
+	POSITION pos_order = { 0, 1 };
+	char cell = backbuf[curr.row][curr.column];
+
+	// [ 초기화 ]
+	reset_order_messages();
+	clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
+	clear_window(order_backbuf, order_pos, ORDER_HEIGHT, ORDER_WIDTH);
+
+	// [ 상태 및 명령창 메시지 출력 ]
+	switch (cell) {
+	case ' ':
+		prints(padd(state_mes_pos, pos_state), "(빈)지형 : 사막 지형");
+		break;
+
+	case 'B':
+		if (check_friend[curr.row][curr.column] == 1) {
+			save_name_for_order[0] = 'B';
+			save_name_for_order[1] = 'F';
+			prints(padd(state_mes_pos, pos_state), "건물 : 아군 본진");
+			prints(padd(state_mes2_pos, pos_state), "하베스터를 생산할 수 있다.");
+			order_message[0] = "하베스터 생산 (H / ESC)";
+			prints(padd(order_mes_pos[0], pos_order), order_message[0]);
+		}
+		else if (check_friend[curr.row][curr.column] == 2) {
+			save_name_for_order[0] = 'B';
+			save_name_for_order[1] = 'E';
+			prints(padd(state_mes_pos, pos_state), "건물 : 적군 본진");
+		}
+		break;
+
+	case 'P':
+		if (check_friend[curr.row][curr.column] == 1) {
+			save_name_for_order[0] = 'P';
+			save_name_for_order[1] = 'F';
+			prints(padd(state_mes_pos, pos_state), "건물 : 아군 장판");
+			prints(padd(state_mes2_pos, pos_state), "숙소, 창고, 병영, 은신처를 설치할 수 있다.");
+			const char* messages[] = {
+				"숙소를 설치하시겠습니까?   (D / ESC)",
+				"창고를 설치하시겠습니까?   (G / ESC)",
+				"병영을 설치하시겠습니까?   (B / ESC)",
+				"은신처를 설치하시겠습니다? (S / ESC)"
+			};
+			for (int i = 0; i < 4; i++) {
+				order_message[i] = messages[i];
+				prints(padd(order_mes_pos[i], pos_order), order_message[i]);
+			}
+		}
+		else if (check_friend[curr.row][curr.column] == 2) {
+			save_name_for_order[0] = 'P';
+			save_name_for_order[1] = 'E';
+			prints(padd(state_mes_pos, pos_state), "건물 : 적군 장판");
+		}
+		break;
+
+	case '1': case '2': case '3': case '4': case '5':
+	case '6': case '7': case '8': case '9':
+		prints(padd(state_mes_pos, pos_state), "건물 : 스파이스");
+		break;
+
+	case 'R':
+		prints(padd(state_mes_pos, pos_state), "건물 : 바위");
+		break;
+
+	case 'H':
+		if (colorbuf[curr.row][curr.column] == COLOR_DEFAULT + 16) {
+			prints(padd(state_mes_pos, pos_state), "유닛 : 아군 하베스터");
+		}
+		else if (colorbuf[curr.row][curr.column] == COLOR_DEFAULT + 64) {
+			prints(padd(state_mes_pos, pos_state), "유닛 : 적군 하베스터");
+		}
+		break;
+
+	case 'W':
+		prints(padd(state_mes_pos, pos_state), "유닛 : 샌드웜");
+		break;
+	}
+}
 
 // [ ESC 키를 눌렀을 때 ]
 void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_HEIGHT][ORDER_WIDTH]) {
-	// [ 명령창을 위한 변수 초기화 ]
-	for (int i = 0; i < 2; i++) {
-		save_name_for_order[i] = ' ';
-	}
-
-	// [ 상태 & 명령창 초기화 ]
-	for (int i = 1; i < STATE_HEIGHT - 1; i++) {
-		for (int j = 1; j < STATE_WIDTH - 1; j++) {
-			POSITION pos = { i, j };
-			printc(padd(state_pos, pos), state_backbuf[i][j], COLOR_BLACK);
-		}
-	}
-	for (int i = 1; i < ORDER_HEIGHT - 1; i++) {
-		for (int j = 1; j < ORDER_WIDTH - 1; j++) {
-			POSITION pos = { i, j };
-			printc(padd(order_pos, pos), order_backbuf[i][j], COLOR_BLACK);
-		}
-	}
-
-	// [ 명령 메시지 초기화 ]
-	for (int i = 0; i < 4; i++) {
-		order_message[i] = 0;
-	}
+	// [ 초기화 ]
+	reset_order_messages();
+	clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
+	clear_window(order_backbuf, order_pos, ORDER_HEIGHT, ORDER_WIDTH);
 }
 
 
@@ -643,81 +614,63 @@ void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_H
 void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH],
 	int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	// [ 아군 본진 --> 하베스터 생산 ] [ 하베스터 생산 비용 5, 인구수 5 ]
-	if (save_name_for_order[0] == 'B') {
-		if (save_name_for_order[1] == 'F') {
-			// [ 하베스터를 생산할 수 있을 때 ]
-			if (resource->spice >= 5 && resource->population + 5 <= resource->population_max) {
-				// [ 하베스터 생산 ] 
-				OBJECT_SAMPLE f_hav2_obj = { { 14, 2 }, { MAP_HEIGHT - 2, MAP_WIDTH - 2 }, 'H', 2000, 2000, COLOR_DEFAULT + 16 };
-				map[1][f_hav2_obj.pos.row][f_hav2_obj.pos.column] = 'H';
-				check_friend[f_hav2_obj.pos.row][f_hav2_obj.pos.column] = 1;
-				send_system_message[0] = "하베스터가 1기가 생산되었습니다.";
-				p_system_message(send_system_message[0], sysmes_map);
+	if (save_name_for_order[0] == 'B' && save_name_for_order[1] == 'F') {
+
+		// [ 하베스터를 생산할 수 있을 때 ]
+		if (resource->spice >= 5 && resource->population + 5 <= resource->population_max) {
+
+			// [ 하베스터 생산 ] 
+			OBJECT_SAMPLE f_hav2_obj = { { 14, 2 }, { MAP_HEIGHT - 2, MAP_WIDTH - 2 }, 'H', 2000, 2000, COLOR_DEFAULT + 16 };
+			map[1][f_hav2_obj.pos.row][f_hav2_obj.pos.column] = 'H';
+			check_friend[f_hav2_obj.pos.row][f_hav2_obj.pos.column] = 1;
+
+			// [ 시스템 메시지 추가 ]
+			add_system_message("하베스터가 1기가 생산되었습니다.", sysmes_map);
 				
-				// 자원감소, 인구수 증가
-				resource->spice -= 5;
-				resource->population += 5;
+			// [ 자원감소, 인구수 증가 ]
+			resource->spice -= 5;
+			resource->population += 5;
 				
+		}
+		// [ 하베스터를 생산할 수 없을 때 ]
+		else {
+			if (resource->spice < 5) {
+				// [ 시스템 메시지 추가 ]
+				add_system_message("생산 자원이 부족하여 하베스터를 생산할 수 없습니다.", sysmes_map);
 			}
-			// [ 하베스터를 생산할 수 없을 때 ]
-			else {
-				if (resource->spice < 5) {
-					send_system_message[0] = "생산 자원이 부족하여 하베스터를 생산할 수 없습니다.";
-					p_system_message(send_system_message[0], sysmes_map);
-				}
-				else if (resource->population  + 5 > resource->population_max) {
-					send_system_message[0] = "인구수가 부족하여 하베스터를 생산할 수 없습니다.";
-					p_system_message(send_system_message[0], sysmes_map);
-				}
-			}
+			else if (resource->population  + 5 > resource->population_max) {
+				// [ 시스템 메시지 추가 ]
+				add_system_message("인구수가 부족하여 하베스터를 생산할 수 없습니다.", sysmes_map);
 		}
 	}
 }
 
-
-// [ 시스템 메시지 출력 ]
-void p_system_message(char str[], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
-	POSITION pos_system = { 0, 1 };
-
-	// 시스템 메시지 틀 초기화
+// [ 시스템 메시지 초기화 함수 ]
+void clear_sysmes_frame(char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
 	for (int i = 1; i < SYSMES_HEIGHT - 1; i++) {
 		for (int j = 1; j < SYSMES_WIDTH - 1; j++) {
 			POSITION pos = { i, j };
 			printc(padd(sysmes_pos, pos), sysmes_backbuf[i][j], COLOR_BLACK);
-
 		}
 	}
+}
 
-	// 시스템 메시지를 위로 올리기
-	if (save_system_message[0] != NULL) {
-		if (save_system_message[1] != NULL) {
-			if (save_system_message[2] != NULL) {
-				if (save_system_message[3] != NULL) {
-					if (save_system_message[4] != NULL) {
-						if (save_system_message[5] != NULL) {
-							save_system_message[6] = save_system_message[5];
-						}
-						save_system_message[5] = save_system_message[4];
-					}
-					save_system_message[4] = save_system_message[3];
-				}
-				save_system_message[3] = save_system_message[2];
-			}
-			save_system_message[2] = save_system_message[1];
-		}
-		save_system_message[1] = save_system_message[0];
+// [ 시스템 메시지 출력 ]
+void p_system_message(char* new_message, char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]) {
+	// [ 메시지를 위로 한 칸씩 밀기 ]
+	for (int i = 6; i > 0; i--) {
+		save_system_message[i] = save_system_message[i - 1];
 	}
+	save_system_message[0] = new_message;
 
-	save_system_message[0] = str;
-	
-
-	// 시스템 메시지 출력
+	// [ 시스템 메시지 초기화 후 메시지 출력 ]
+	clear_sysmes_frame(sysmes_map);
+	POSITION pos_system = { 0, 1 };
 	for (int i = 0; i < 7; i++) {
 		if (save_system_message[i] != NULL) {
 			prints(padd(system_mes_pos[i], pos_system), save_system_message[i]);
 		}
 	}
-
 }
 
 

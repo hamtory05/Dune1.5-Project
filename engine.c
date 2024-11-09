@@ -787,7 +787,7 @@ void sw2_move(void) {
 		p_system_message(send_system_message[0], sysmes_map);
 
 		// [ 다음 이동 유닛 결정 ] // 지금은 유닛이 하베스터 밖에 없기도 하고 구체적인 구조체가 짜여있지않아서 오류가 발생하므로 임시로 2,4 원래 자리로 해놓았음.
-		POSITION new_dest = { 2, 4 };
+		POSITION new_dest = { 12, 55 };
 		sw1_obj.dest = new_dest;
 
 		//// 임시로 repr 변경

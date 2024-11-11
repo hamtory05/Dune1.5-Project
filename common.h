@@ -46,6 +46,7 @@ typedef enum {
 	k_esc,
 	k_h,
 	k_b,
+	k_p,
 	k_undef, // 정의되지 않은 키 입력	
 } KEY;
 
@@ -94,6 +95,8 @@ inline POSITION dtop2(DIRECTION d) {
 #define pmove2(p, d)	(padd((p), dtop2(d)))
 
 /* ================= game data =================== */
+
+// [ 스파이스, 인구 ]
 typedef struct {
 	int spice;		// 현재 보유한 스파이스
 	int spice_max;  // 스파이스 최대 저장량
@@ -102,7 +105,7 @@ typedef struct {
 } RESOURCE;
 
 
-// 대강 만들어 봤음. 기능 추가하면서 각자 수정할 것
+// [ OBJ ]
 typedef struct {
 	POSITION pos;		// 현재 위치(position)
 	POSITION dest;		// 목적지(destination)
@@ -113,7 +116,7 @@ typedef struct {
 } OBJECT_SAMPLE;
  
 
-// 건물 배치
+// [ 건물 배치 ]
 typedef struct {
 	POSITION pos1; // 건물 크기 1
 	POSITION pos2; // 건물 크기 2
@@ -123,7 +126,7 @@ typedef struct {
 	int layer;     // 몇번 째 레이어에 들어가는건지 구분 <-- 필요하면 사용
 } OBJECT_BUILDING;
 
-// 모래 폭풍 
+// [ 모래 폭풍 ]
 typedef struct {
 	POSITION pos1;
 	POSITION pos2;
@@ -138,9 +141,5 @@ typedef struct {
 	int next_move_time;
 	int color;
 } SAND_WIND;
-
-
-
-
 
 #endif

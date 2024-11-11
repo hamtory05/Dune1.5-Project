@@ -6,31 +6,43 @@
 #include "io.h"
 #include "display.h"
 
+// [ INIT ]
+void init_map(void);
+void init_state(void);
+void init_sysmes(void);
+void init_order(void);
+void init_unit(void);
 void init(void);
+
+// [ INTRO, OUTRO ]
 void intro(void);
 void outro(void);
+
+// [ CURSOR ]
 void cursor_move(DIRECTION dir, int move);
+
+// [ SAMPLE OBJ ]
 void sample_obj_move(void);
 POSITION sample_obj_next_position(void);
 
-// 샌드웜 1
+// [ 샌드웜 ]
 POSITION sw1_next_pos(void);
 void sw1_move(void);
 
-// 샌드웜 2
 POSITION sw2_next_pos(void);
 void sw2_move(void);
 
-// 사막 독수리
+// [ 사막 독수리 ]
 POSITION d_eagle_next_pos(void);
 void d_eagle_move(void);
 
-// 모래 폭풍
+// [ 모래 폭풍 (X) ]
 POSITION sand_wind_next_pos(void);
 void sand_wind_move(void);
 
-// 시스템 메시지
+// [ 시스템 메시지 ]
 char* send_system_message[1];
+
 
 /* ================= control =================== */
 int sys_clock = 0;		// system-wide clock(ms)
@@ -46,6 +58,9 @@ char state_map[STATE_HEIGHT][STATE_WIDTH] = { 0 }; // 16, 50
 char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH] = { 0 }; // 6 60
 char order_map[ORDER_HEIGHT][ORDER_WIDTH] = { 0 }; // 6 60
 int check_friend[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 0 --> 아무것도 아님, 1 --> 아군, 2 --> 적군
+bool b_key_press = false; // 장판 설치 할 때 b키를 눌렀는지 확인
+bool big_cursor = false; // 2X2 커서 활성화, 비활성화
+bool p_key_press = false; // 장판 설치 확인
 
 RESOURCE resource = {
 	.spice = 5,
@@ -125,17 +140,16 @@ SAND_WIND sand_wind = {
 };
 
 
-
 /* ================= main() =================== */
 int main(void) {
 	srand((unsigned int)time(NULL));
 
 	init();
 	intro();
-	display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend);
+	display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend, big_cursor);
 	
 	// [ 시스템 메시지 추가 ]
-	p_system_message("게임이 시작되었습니다.", sysmes_map);
+	p_system_message("게임이 시작되었습니다.");
 
 	while (1) {
 		// [ loop 돌 때마다(즉, TICK==10ms마다) 키 입력 확인 ]
@@ -178,21 +192,49 @@ int main(void) {
 		else {
 			// 방향키 외의 입력
 			switch (key) {
+			// [ Q ]
 			case k_quit: outro();
 			
-			case k_esc: state_esc(state_map, order_map);
+			// [ ESC ]
+			case k_esc: state_esc();
 				// [ 시스템 메시지 추가 ]
-				p_system_message("ESC키를 눌렀습니다.", sysmes_map);
-				break;
-			
-			case k_space: state_spacebar(map, state_map, cursor, check_friend);
-				// [ 시스템 메시지 추가 ]
-				p_system_message("스페이스바를 눌렀습니다.", sysmes_map);
+				p_system_message("ESC키를 눌렀습니다.");
+				b_key_press = false;
 				break;
 
-			case k_h: press_h(&resource, map, sysmes_map, check_friend);
+			// [ SPACE ]
+			case k_space: state_spacebar(&resource, cursor, check_friend, p_key_press, map);
 				// [ 시스템 메시지 추가 ]
-				p_system_message("H키를 눌렀습니다.", sysmes_map);
+				p_system_message("스페이스바를 눌렀습니다.");
+				big_cursor = false;
+				p_key_press = false;
+				break;
+
+			// [ H ]
+			case k_h: press_h(&resource, map, check_friend);
+				// [ 시스템 메시지 추가 ]
+				p_system_message("H키를 눌렀습니다.");
+				break;
+
+			// [ B ]
+			case k_b: press_b(&resource, cursor, check_friend);
+				// [ 시스템 메시지 추가 ]
+				p_system_message("B키를 눌렀습니다.");
+				b_key_press = true;
+				break;
+
+			// [ P ]
+			case k_p: 
+				// [ 시스템 메시지 추가 ]
+				p_system_message("P키를 눌렀습니다.");
+
+				if (b_key_press == true) {
+					big_cursor = true;
+					p_key_press = true;
+				}
+
+				b_key_press = false;
+				
 				break;
 
 			case k_none:
@@ -209,7 +251,7 @@ int main(void) {
 		
 
 		// [ 화면 출력 ]
-		display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend);
+		display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend, big_cursor);
 		Sleep(TICK);
 		sys_clock += 10;
 	}
@@ -221,24 +263,28 @@ int main(void) {
 // [ 인트로 ]
 void intro(void) {
 	printf("DUNE 1.5\n");
+	// 게임을 시작하시겠습니까? 시작하려면 무슨 키를 눌러주세요.
+	// 키 입력 받고 맞는 키면 게임 시작하게 만들기
 	Sleep(2000);
 	system("cls");
 }
 
 // [ 아웃트로 ]
 void outro(void) {
+	// 화면 전체를 싹다 빈칸으로 만든 후 게임 오버라고 출력하게 하기
 	printf("exiting...\n");
 	exit(0);
 }
 
 // [ INIT ]
-void init(void) {
-	// layer 0(map[0])에 지형 생성
+void init_map(void) {
+	// [ layer 0(map[0])에 지형 생성 ]
 	for (int j = 0; j < MAP_WIDTH; j++) {
 		map[0][0][j] = '#';
 		map[0][MAP_HEIGHT - 1][j] = '#';
 	}
 
+	// [ layer 0(map[0])에 지형 생성 ]
 	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
 		map[0][i][0] = '#';
 		map[0][i][MAP_WIDTH - 1] = '#';
@@ -247,19 +293,29 @@ void init(void) {
 		}
 	}
 
-	// layer 1(map[1])은 비워 두기(-1로 채움)
+	// [ layer 1(map[1])은 비워 두기(-1로 채움) ]
 	for (int i = 0; i < MAP_HEIGHT; i++) {
 		for (int j = 0; j < MAP_WIDTH; j++) {
 			map[1][i][j] = -1;
 		}
 	}
 
+	// [ layer 2(map[2])은 비워 두기(-1로 채움) ]
+	for (int i = 0; i < MAP_HEIGHT; i++) {
+		for (int j = 0; j < MAP_WIDTH; j++) {
+			map[2][i][j] = -1;
+		}
+	}
+}
+
+void init_state(void) {
 	// [ 상태창 기본 틀 ]
 	for (int i = 0; i < STATE_WIDTH; i++) {
 		state_map[0][i] = '#';
 		state_map[STATE_HEIGHT - 1][i] = '#';
 	}
 
+	// [ 상태창 기본 틀 ]
 	for (int i = 1; i < STATE_HEIGHT - 1; i++) {
 		state_map[i][0] = '#';
 		state_map[i][STATE_WIDTH - 1] = '#';
@@ -267,13 +323,16 @@ void init(void) {
 			state_map[i][j] = ' ';
 		}
 	}
-	
+}
+
+void init_sysmes(void) {
 	// [ 시스템 기본 틀 ]
 	for (int i = 0; i < SYSMES_WIDTH; i++) {
 		sysmes_map[0][i] = '#';
 		sysmes_map[SYSMES_HEIGHT - 1][i] = '#';
 	}
 
+	// [ 시스템 기본 틀 ]
 	for (int i = 1; i < SYSMES_HEIGHT - 1; i++) {
 		sysmes_map[i][0] = '#';
 		sysmes_map[i][SYSMES_WIDTH - 1] = '#';
@@ -281,13 +340,16 @@ void init(void) {
 			sysmes_map[i][j] = ' ';
 		}
 	}
+}
 
+void init_order(void) {
 	// [ 명령창 기본 틀 ]
 	for (int i = 0; i < ORDER_WIDTH; i++) {
 		order_map[0][i] = '#';
 		order_map[ORDER_HEIGHT - 1][i] = '#';
 	}
 
+	// [ 명령창 기본 틀 ]
 	for (int i = 1; i < ORDER_HEIGHT - 1; i++) {
 		order_map[i][0] = '#';
 		order_map[i][ORDER_WIDTH - 1] = '#';
@@ -295,23 +357,40 @@ void init(void) {
 			order_map[i][j] = ' ';
 		}
 	}
+}
 
-	// layer 2(map[2])은 비워 두기(-1로 채움)
-	for (int i = 0; i < MAP_HEIGHT; i++) {
-		for (int j = 0; j < MAP_WIDTH; j++) {
-			map[2][i][j] = -1;
-		}
-	}
+void init_unit(void) {
+	// [ 사막 독수리 ]
+	map[2][d_eagle.pos.row][d_eagle.pos.column] = d_eagle.repr;
 
-
-	// [ 유닛 오브젝트 ]
-	map[2][d_eagle.pos.row][d_eagle.pos.column] = d_eagle.repr; // 사막 독수리
-	map[1][f_hav_obj.pos.row][f_hav_obj.pos.column] = f_hav_obj.repr; // 아군 하베스터
+	// [ 아군 하베스터 ]
+	map[1][f_hav_obj.pos.row][f_hav_obj.pos.column] = f_hav_obj.repr; 
 	check_friend[f_hav_obj.pos.row][f_hav_obj.pos.column] = 1;
-	map[1][e_hav_obj.pos.row][e_hav_obj.pos.column] = e_hav_obj.repr; // 적군 하베스터 
+
+	// [ 적군 하베스터 ]
+	map[1][e_hav_obj.pos.row][e_hav_obj.pos.column] = e_hav_obj.repr;
 	check_friend[e_hav_obj.pos.row][e_hav_obj.pos.column] = 2;
-	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr; // 샌드웜 1
-	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = sw2_obj.repr; // 샌드웜 2
+
+	// [ 샌드웜 ]
+	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr; 
+	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = sw2_obj.repr; 
+}
+
+void init(void) {
+	// [ MAP ]
+	init_map();
+
+	// [ STATE ]
+	init_state();
+
+	// [ SYSMES ]
+	init_sysmes();
+
+	// [ ORDER ]
+	init_order();
+
+	// [ UNIT ]
+	init_unit();
 }
 
 // [ 커서 이동 ]
@@ -574,7 +653,7 @@ void sw1_move(void) {
 	if (r < 9) {
 		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 스파이스 매장지를 생성했습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 		map[0][sw1_obj.pos.row][sw1_obj.pos.column] = spice_number[r];
 	}
@@ -585,7 +664,7 @@ void sw1_move(void) {
 	if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'H' && check_friend[sw1_obj.pos.row][sw1_obj.pos.column] == 1) {
 		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 아군 하베스터를 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 		
 		//// 임시로 repr 변경 (원래는 샌드웜이 밟고 지나가면 사라지는데 나중에 하베스터 움직임 추가할 때 map상에서는 ' '여도 repr 상태는 H니까 하베스터가 움지깅게 되면 다시 H가 출력될것임 이건 나중에 추가 및 수정 해야할듯?)
 		//if (f_hav_obj.pos.row == sw1_obj.pos.row && f_hav_obj.pos.column == sw1_obj.pos.column) {
@@ -602,7 +681,7 @@ void sw1_move(void) {
 	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'H' && check_friend[sw1_obj.pos.row][sw1_obj.pos.column] == 2) {
 		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 적군 하베스터를 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 		//// 임시로 repr 변경
 		//e_hav_obj.repr = ' ';
@@ -611,7 +690,7 @@ void sw1_move(void) {
 	// [ 프레멘과 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'F') {
 		send_system_message[0] = "샌드웜이 프레멘을 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 
 	}
@@ -619,7 +698,7 @@ void sw1_move(void) {
 	// [ 투사와 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'F') {
 		send_system_message[0] = "샌드웜이 투사를 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 
 	}
@@ -627,7 +706,7 @@ void sw1_move(void) {
 	// [ 보병 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'S') {
 		send_system_message[0] = "샌드웜이 보병을 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 
 	}
@@ -635,7 +714,7 @@ void sw1_move(void) {
 	// [ 중전차 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'T') {
 		send_system_message[0] = "샌드웜이 중전차를 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 
 	}
@@ -766,7 +845,7 @@ void sw2_move(void) {
 	if (r < 9) {
 		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 스파이스 매장지를 생성했습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 		map[0][sw2_obj.pos.row][sw2_obj.pos.column] = spice_number[r];
 	}
@@ -777,7 +856,7 @@ void sw2_move(void) {
 	if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'H' && check_friend[sw2_obj.pos.row][sw2_obj.pos.column] == 1) {
 		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 아군 하베스터를 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 		// [ 다음 이동 유닛 결정 ] // 지금은 유닛이 하베스터 밖에 없기도 하고 구체적인 구조체가 짜여있지않아서 오류가 발생하므로 임시로 2,4 원래 자리로 해놓았음.
 		POSITION new_dest = { 12, 55 };
@@ -791,7 +870,7 @@ void sw2_move(void) {
 	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'H' && check_friend[sw2_obj.pos.row][sw2_obj.pos.column] == 2) {
 		// [ 시스템 메시지 추가 ]
 		send_system_message[0] = "샌드웜이 적군 하베스터를 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 		// [ 다음 이동 유닛 결정 ] // 지금은 유닛이 하베스터 밖에 없기도 하고 구체적인 구조체가 짜여있지않아서 오류가 발생하므로 임시로 2,4 원래 자리로 해놓았음.
 		POSITION new_dest = { 2, 4 };
@@ -804,7 +883,7 @@ void sw2_move(void) {
 	// [ 프레멘과 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'F') {
 		send_system_message[0] = "샌드웜이 프레멘을 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 
 	}
@@ -812,7 +891,7 @@ void sw2_move(void) {
 	// [ 투사와 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'F') {
 		send_system_message[0] = "샌드웜이 투사를 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 
 	}
@@ -820,7 +899,7 @@ void sw2_move(void) {
 	// [ 보병 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'S') {
 		send_system_message[0] = "샌드웜이 보병을 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 
 	}
@@ -828,7 +907,7 @@ void sw2_move(void) {
 	// [ 중전차 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'T') {
 		send_system_message[0] = "샌드웜이 중전차를 잡아먹었습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 
 	}
@@ -933,7 +1012,7 @@ void sand_wind_move(void) {
 		
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 아군 하베스터가 사망했습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 	// < 적군 하베스터 > (미완성)
@@ -950,7 +1029,7 @@ void sand_wind_move(void) {
 		
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 적군 하베스터가 사망했습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 	// < 프레멘 > (아직 구현 X)
@@ -963,7 +1042,7 @@ void sand_wind_move(void) {
 
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 프레멘이 사망했습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 	// < 보병 > (아직 구현 X)
@@ -976,7 +1055,7 @@ void sand_wind_move(void) {
 
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 보병이 사망했습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 	// < 투사 > (아직 구현 X)
@@ -988,7 +1067,7 @@ void sand_wind_move(void) {
 
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 투사가 사망했습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 	// < 중전차 > (아직 구현 X)
@@ -999,7 +1078,7 @@ void sand_wind_move(void) {
 
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 중전차가 부서졌습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 	// < 숙소 > (아직 구현 X)
@@ -1011,7 +1090,7 @@ void sand_wind_move(void) {
 
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 숙소가 박살났습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 	// < 창고 > (아직 구현 X)
@@ -1023,7 +1102,7 @@ void sand_wind_move(void) {
 
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 창고가 박살났습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 	// < 병영 > (아직 구현 X)
@@ -1035,7 +1114,7 @@ void sand_wind_move(void) {
 
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 병영이 박살났습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 	// < 은신처 > (아직 구현 X)
@@ -1047,7 +1126,7 @@ void sand_wind_move(void) {
 
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 은신처가 박살났습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 	// < 투기장 > (아직 구현 X)
@@ -1059,7 +1138,7 @@ void sand_wind_move(void) {
 
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 투기장이 박살났습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 	// < 공장 > (아직 구현 X)
@@ -1072,7 +1151,7 @@ void sand_wind_move(void) {
 
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍에 의해 공장이 박살났습니다.";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 
 	}
 
@@ -1087,7 +1166,7 @@ void sand_wind_move(void) {
 		
 		// 시스템 메시지
 		send_system_message[0] = "모래 폭풍이 사라졌습니다..";
-		p_system_message(send_system_message[0], sysmes_map);
+		p_system_message(send_system_message[0]);
 	}
 
 	sand_wind.next_move_time = sys_clock + sand_wind.move_period;

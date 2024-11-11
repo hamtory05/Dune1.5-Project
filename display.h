@@ -10,16 +10,15 @@
 
 #include "common.h"
 
-// 표시할 색상 정의. 대충 맞춰 뒀는데, 취향껏 추가하거나 변경하기
+// [ 색상 정의 ]
 #define COLOR_DEFAULT	15
 #define COLOR_CURSOR	15
 #define COLOR_RESOURCE  112
-#define COLOR_BLACK 15
-#define CURSOR_COLOR 90
+#define COLOR_BLACK		15
+#define B_CURSOR_COLOR	230
 
 
-// 지금은 자원, 맵, 커서만 표시
-// 앞으로 화면에 표시할 내용들 여기에 추가하기
+// [ DISPLAY ]
 void display(
 	RESOURCE resource,
 	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
@@ -27,21 +26,25 @@ void display(
 	char state_map[STATE_HEIGHT][STATE_WIDTH], 
 	char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH],
 	char order_map[ORDER_HEIGHT][ORDER_WIDTH],
-	int check_friend[MAP_HEIGHT][MAP_WIDTH]
+	int check_friend[MAP_HEIGHT][MAP_WIDTH],
+	bool big_cursor
 );
 
-void state_spacebar(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH],
-	char state_map[STATE_HEIGHT][STATE_WIDTH], CURSOR cursor,
-	int check_friend[MAP_HEIGHT][MAP_WIDTH]);
 
-void state_esc(char state_map[STATE_HEIGHT][STATE_WIDTH], char order_map[ORDER_HEIGHT][ORDER_WIDTH]);
+// [ KEY 명령어 함수 ]
+void state_spacebar(RESOURCE *resource, CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH], 
+	bool p_key_press, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
 
-void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH],
-	int check_friend[MAP_HEIGHT][MAP_WIDTH]);
+void state_esc(void);
 
-void p_system_message(char* new_message, char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]);
+void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]);
 
-void press_b(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]);
+void press_b(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH]);
+
+
+// [ 시스템 메시지 ]
+void p_system_message(char* new_message);
+
 
 // [ 건물 함수 ]
 void p_f_base(OBJECT_BUILDING fb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]);	 // 아군 본진

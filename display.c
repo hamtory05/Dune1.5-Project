@@ -73,6 +73,8 @@ const int pCol[] = { 0, -1, -1, -1, 0, 1, 1, 1 };
 const int bigrow[] = {1, 1, 0};
 const int bigcol[] = {0, 1, 1};
 
+int base_barr_check[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 본진 병영 구분
+int shle_sold_check[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 은신처, 보병 구분
 
 // =================================== [ 건물 ] ======================================= //
 
@@ -160,6 +162,7 @@ void p_f_base(OBJECT_BUILDING fb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int 
 	for (int i = 0; i < 4; i++) {
 		map[0][fb_num[i].row][fb_num[i].column] = fb.repr;
 		check_friend[fb_num[i].row][fb_num[i].column] = 1;
+		base_barr_check[fb_num[i].row][fb_num[i].column] = 1;
 	}
 }
 
@@ -169,6 +172,7 @@ void p_e_base(OBJECT_BUILDING eb, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int 
 	for (int i = 0; i < 4; i++) {
 		map[0][eb_num[i].row][eb_num[i].column] = eb.repr;
 		check_friend[eb_num[i].row][eb_num[i].column] = 2;
+		base_barr_check[eb_num[i].row][eb_num[i].column] = 1;
 	}
 }
 
@@ -250,7 +254,6 @@ void display(
 	display_resource(resource);
 	display_map(map, check_friend);
 	display_cursor(cursor, check_friend, big_cursor, map);
-	p_building(map, check_friend);
 	display_state_map(state_map);
 	display_sysmes_map(sysmes_map);
 	display_order_map(order_map);
@@ -293,15 +296,25 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 
 			// === [ 건물 및 유닛 색상 설정 ] ===
 			switch (cell) {
-			// [ 본진 ]
-			case 'B':  
-				if (check_friend[i][j] == 1) {
-					color = COLOR_DEFAULT + 16;  // 아군 본진 (파란색 배경) 
+			// [ 본진 & 병영 ]
+			case 'B':
+				// [ 본진 ]
+				if (base_barr_check[i][j] == 1) {
+					if (check_friend[i][j] == 1) {
+						color = COLOR_DEFAULT + 16;  // 아군 본진 (파란색 배경) 
+					}
+					else if (check_friend[i][j] == 2) {
+						color = COLOR_DEFAULT + 64;  // 적군 본진 (빨간색 배경)
+					}
 				}
-				else if (check_friend[i][j] == 2) {
-					color = COLOR_DEFAULT + 64;  // 적군 본진 (빨간색 배경)
+				// [ 병영 ]
+				else if (base_barr_check[i][j] == 2) {
+					if (check_friend[i][j] == 1) {
+						color = 181;
+					}
 				}
 				break;
+
 			// [ 장판 ]
 			case 'P':  
 				color = COLOR_BLACK;  
@@ -318,6 +331,32 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 				color = COLOR_DEFAULT;
 				break;
 			
+			// [ 숙소 ]
+			case 'D':
+				color = 180; // 색 아직 미지정 
+				break;
+
+			// [ 창고 ]
+			case 'G':
+				color = 180; // 색 아직 미지정 
+				break;
+
+			case 'S':
+				// [ 은신처 ]
+				if (shle_sold_check[i][j] == 1) {
+					color = 180; // 색 아직 미지정 
+					
+				}
+
+				// [ 보병 ]
+				else if (shle_sold_check[i][j] == 2) {
+					color = 150; // 색 아직 미지정 
+
+				}
+				break;
+
+			/* ===== [ 유닛 ] ===== */
+
 			// [ 하베스터 ]
 			case 'H':  
 				if (check_friend[i][j] == 1) {
@@ -604,7 +643,8 @@ void p_system_message(char* new_message) {
 
 // [ 스페이스 바 키를 눌렀을 때 ]
 void state_spacebar(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH], 
-	bool p_key_press, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	bool p_key_press, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], bool d_key_press, bool g_key_press,
+	bool b_b_key_press, bool s_key_press) {
 
 	// [ 변수 지정 ]
 	POSITION curr = cursor.current;
@@ -617,52 +657,37 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIG
 	clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
 	clear_window(order_backbuf, order_pos, ORDER_HEIGHT, ORDER_WIDTH);
 
-	// [ 스페이스바로 장판 설치 ]
-	if (p_key_press && resource->spice >= 1) {
-		// [ 커서 자리 P ]
-		map[0][curr.row][curr.column] = 'P';
-		check_friend[curr.row][curr.column] = 1;
-
-		// [ 커서 주변 자리 P ]
-		for (int i = 0; i < 3; i++) {
-			int b_row = curr.row + bigrow[i];
-			int b_col = curr.column + bigcol[i];
-			map[0][b_row][b_col] = 'P';
-			check_friend[b_row][b_col] = 1;
-		}
-
-		// [ 생산 자원 소모 ]
-		resource->spice -= 1;
-		p_system_message("장판을 건설하였습니다.");
-	}
-
-	// [ 장판을 생산할 수 없을 때 ]
-	else if (p_key_press && resource->spice < 1) {
-		p_system_message("생산자원이 부족하여 건설할 수 없습니다.");
-	}
 	
-	// [ 상태 및 명령창 메시지 출력 ]
 	switch (cell) {
 	case ' ':
 		prints(padd(state_mes_pos, pos_state), "(빈)지형 : 사막 지형");
 		break;
 
+	// [ 본진 & 병영 ]
 	case 'B':
-		if (check_friend[curr.row][curr.column] == 1) {
-			save_name_for_order[0] = 'B';
-			save_name_for_order[1] = 'F';
-			prints(padd(state_mes_pos, pos_state), "건물 : 아군 본진");
-			prints(padd(state_mes2_pos, pos_state), "하베스터를 생산할 수 있다.");
-			order_message[0] = "하베스터 생산 (H / ESC)";
-			prints(padd(order_mes_pos[0], pos_order), order_message[0]);
+		// [ 본진 ]
+		if (base_barr_check[curr.row][curr.column] == 1) {
+			if (check_friend[curr.row][curr.column] == 1) {
+				save_name_for_order[0] = 'B';
+				save_name_for_order[1] = 'F';
+				prints(padd(state_mes_pos, pos_state), "건물 : 아군 본진");
+				prints(padd(state_mes2_pos, pos_state), "하베스터를 생산할 수 있다.");
+				order_message[0] = "하베스터 생산 (H / ESC)";
+				prints(padd(order_mes_pos[0], pos_order), order_message[0]);
+			}
+			else if (check_friend[curr.row][curr.column] == 2) {
+				save_name_for_order[0] = 'B';
+				save_name_for_order[1] = 'E';
+				prints(padd(state_mes_pos, pos_state), "건물 : 적군 본진");
+			}
 		}
-		else if (check_friend[curr.row][curr.column] == 2) {
-			save_name_for_order[0] = 'B';
-			save_name_for_order[1] = 'E';
-			prints(padd(state_mes_pos, pos_state), "건물 : 적군 본진");
+		// [ 병영 ]
+		else if (base_barr_check[curr.row][curr.column]	 == 2) {
+			prints(padd(state_mes_pos, pos_state), "건물 : 병영");
 		}
 		break;
 
+	// [ 장판 ] 
 	case 'P':
 		if (check_friend[curr.row][curr.column] == 1) {
 			save_name_for_order[0] = 'P';
@@ -686,6 +711,16 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIG
 		prints(padd(state_mes_pos, pos_state), "건물 : 바위");
 		break;
 
+	// [ 숙소 ]
+	case 'D':
+
+		break;
+
+	// [ 은신처 ]
+	case 'S':
+		break;
+
+	/* ===== [유닛] ====== */
 	case 'H':
 		if (colorbuf[curr.row][curr.column] == COLOR_DEFAULT + 16) {
 			prints(padd(state_mes_pos, pos_state), "유닛 : 아군 하베스터");
@@ -699,6 +734,151 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIG
 		prints(padd(state_mes_pos, pos_state), "유닛 : 샌드웜");
 		break;
 	}
+
+
+	// [ 스페이스바로 장판 설치 ]
+	if (p_key_press && resource->spice >= 1) {
+
+		// [ 커서 자리 P ]
+		map[0][curr.row][curr.column] = 'P';
+		check_friend[curr.row][curr.column] = 1;
+
+		// [ 커서 주변 자리 P ]
+		for (int i = 0; i < 3; i++) {
+			int b_row = curr.row + bigrow[i];
+			int b_col = curr.column + bigcol[i];
+			map[0][b_row][b_col] = 'P';
+			check_friend[b_row][b_col] = 1;
+		}
+
+		// [ 생산 자원 소모 ]
+		resource->spice -= 1;
+		p_system_message("장판을 건설하였습니다.");
+
+		// [ 초기화 ]
+		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
+	}
+
+	// [ 장판을 설치할 수 없을 때 ]
+	else if (p_key_press && resource->spice < 1) {
+		p_system_message("생산자원이 부족하여 건설할 수 없습니다.");
+	}
+
+
+	// [ 스페이스바로 숙소 설치 ]
+	if (d_key_press && resource->spice >= 2) {
+
+		// [ 커서 자리 P ]
+		map[0][curr.row][curr.column] = 'D';
+		check_friend[curr.row][curr.column] = 1;
+
+		// [ 커서 주변 자리 P ]
+		for (int i = 0; i < 8; ++i) {  // 8방향 검사
+			int newRow = curr.row + pRow[i];
+			int newCol = curr.column + pCol[i];
+			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
+				map[0][newRow][newCol] = 'D';
+			}
+		}
+
+		// [ 생산 자원 소모 ]
+		resource->spice -= 2;
+		p_system_message("숙소를 건설하였습니다.");
+
+		// [ 초기화 ]
+		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
+	}
+	// [ 숙소를 설치할 수 없을 때 ]
+	else if (d_key_press && resource->spice < 2) {
+		p_system_message("생산자원이 부족하여 건설할 수 없습니다.");
+	}
+
+
+	// [ 스페이스바로 창고 설치 ]
+	if (g_key_press && resource->spice >= 4) {
+		// [ 커서 자리 P ]
+		map[0][curr.row][curr.column] = 'G';
+		check_friend[curr.row][curr.column] = 1;
+
+		// [ 커서 주변 자리 P ]
+		for (int i = 0; i < 8; ++i) {  // 8방향 검사
+			int newRow = curr.row + pRow[i];
+			int newCol = curr.column + pCol[i];
+			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
+				map[0][newRow][newCol] = 'G';
+			}
+		}
+
+		// [ 생산 자원 소모 ]
+		resource->spice -= 2;
+		p_system_message("숙소를 건설하였습니다.");
+
+		// [ 초기화 ]
+		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
+	}
+	// [ 창고를 설치할 수 없을 때 ]
+	else if (d_key_press && resource->spice < 4) {
+		p_system_message("생산자원이 부족하여 건설할 수 없습니다.");
+	}
+
+
+	// [ 스페이스바로 병영 설치 ]
+	if (b_b_key_press && resource->spice >= 4) {
+		map[0][curr.row][curr.column] = 'B';
+		check_friend[curr.row][curr.column] = 1;
+		base_barr_check[curr.row][curr.column] = 2;
+
+		// [ 커서 주변 자리 P ]
+		for (int i = 0; i < 8; ++i) {  // 8방향 검사
+			int newRow = curr.row + pRow[i];
+			int newCol = curr.column + pCol[i];
+			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
+				map[0][newRow][newCol] = 'B';
+				base_barr_check[newRow][newCol] = 2;
+			}
+		}
+
+		// [ 생산 자원 소모 ]
+		resource->spice -= 4;
+		p_system_message("병영을 건설하였습니다.");
+
+		// [ 초기화 ]
+		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
+	}
+	// [ 병영을 설치할 수 없을 때 ]
+	else if (b_b_key_press && resource->spice < 4) {
+		p_system_message("생산자원이 부족하여 건설할 수 없습니다.");
+	}
+
+	// [ 스페이스바로 은신처 설치 ]
+	if (s_key_press && resource->spice >= 5) {
+		map[0][curr.row][curr.column] = 'S';
+		check_friend[curr.row][curr.column] = 1;
+		shle_sold_check[curr.row][curr.column] = 1; // 은신처 - 1, 보병 - 2
+
+		// [ 커서 주변 자리 P ]
+		for (int i = 0; i < 8; ++i) {  // 8방향 검사
+			int newRow = curr.row + pRow[i];
+			int newCol = curr.column + pCol[i];
+			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
+				map[0][newRow][newCol] = 'S';
+				shle_sold_check[newRow][newCol] = 1;
+			}
+		}
+
+		// [ 생산 자원 소모 ]
+		resource->spice -= 5;
+		p_system_message("은신처를 건설하였습니다.");
+
+		// [ 초기화 ]
+		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
+	}
+	// [ 은신처를 설치할 수 없을 때 ]
+	else if (s_key_press && resource->spice < 5) {
+		p_system_message("생산자원이 부족하여 건설할 수 없습니다.");
+	}
+
+
 }
 
 // [ ESC 키를 눌렀을 때 ]
@@ -744,7 +924,7 @@ void press_h(RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int c
 	}
 }
 
-// [ B키를 눌렀을 때 ]
+// [ B 키를 눌렀을 때 ]
 void press_b(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 
 	// [ 변수 지정 ]
@@ -781,4 +961,39 @@ void press_b(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIGHT][MAP
 		}
 		break;
 	}
+}
+
+// [ P 키를 눌렀을 때 ]
+void press_p(void) {
+	POSITION pos_order = { 0, 1 };
+	clear_window(order_backbuf, order_pos, ORDER_HEIGHT, ORDER_WIDTH);
+	prints(padd(order_mes_pos[0], pos_order), "스페이스바를 눌러 장판 설치를 완료하세요.");
+}
+
+// [ D 키를 눌렀을 때 ]
+void press_d(void) {
+	POSITION pos_order = { 0, 1 };
+	clear_window(order_backbuf, order_pos, ORDER_HEIGHT, ORDER_WIDTH);
+	prints(padd(order_mes_pos[0], pos_order), "스페이스바를 눌러 숙소 설치를 완료하세요.");
+}
+
+// [ G 키를 눌렀을 때 ]
+void press_g(void) {
+	POSITION pos_order = { 0, 1 };
+	clear_window(order_backbuf, order_pos, ORDER_HEIGHT, ORDER_WIDTH);
+	prints(padd(order_mes_pos[0], pos_order), "스페이스바를 눌러 창고 설치를 완료하세요.");
+}
+
+// [ B - B 키를 눌렀을 때 ]
+void press_b_b(void) {
+	POSITION pos_order = { 0, 1 };
+	clear_window(order_backbuf, order_pos, ORDER_HEIGHT, ORDER_WIDTH);
+	prints(padd(order_mes_pos[0], pos_order), "스페이스바를 눌러 병영 설치를 완료하세요.");
+}
+
+// [ S 키를 눌렀을 때 ]
+void press_s(void) {
+	POSITION pos_order = { 0, 1 };
+	clear_window(order_backbuf, order_pos, ORDER_HEIGHT, ORDER_WIDTH);
+	prints(padd(order_mes_pos[0], pos_order), "스페이스바를 눌러 은신처 설치를 완료하세요.");
 }

@@ -61,7 +61,13 @@ int check_friend[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 0 --> 아무것도 아님, 1 --> �
 bool b_key_press = false; // 장판 설치 할 때 b키를 눌렀는지 확인
 bool big_cursor = false; // 2X2 커서 활성화, 비활성화
 bool p_key_press = false; // 장판 설치 확인
+bool d_key_press = false; // 숙소 설치 확인
+bool g_key_press = false; // 창고 설치 확인
+bool b_b_key_press = false; // 병영 설치 확인
+bool s_key_press = false;  // 은신처 설치 확인
 
+
+// [ 자원 ]
 RESOURCE resource = {
 	.spice = 5,
 	.spice_max = 20,
@@ -147,7 +153,7 @@ int main(void) {
 	init();
 	intro();
 	display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend, big_cursor);
-	
+	p_building(map, check_friend);
 	// [ 시스템 메시지 추가 ]
 	p_system_message("게임이 시작되었습니다.");
 
@@ -203,11 +209,19 @@ int main(void) {
 				break;
 
 			// [ SPACE ]
-			case k_space: state_spacebar(&resource, cursor, check_friend, p_key_press, map);
+			case k_space: state_spacebar(&resource, cursor, check_friend, p_key_press, map, d_key_press, g_key_press,
+				b_b_key_press, s_key_press);
 				// [ 시스템 메시지 추가 ]
 				p_system_message("스페이스바를 눌렀습니다.");
+
+				// [ KEY FALSE ]
 				big_cursor = false;
 				p_key_press = false;
+				d_key_press = false;
+				g_key_press = false;
+				b_b_key_press = false;
+				s_key_press = false; 
+
 				break;
 
 			// [ H ]
@@ -218,24 +232,70 @@ int main(void) {
 
 			// [ B ]
 			case k_b: press_b(&resource, cursor, check_friend);
+				if (b_key_press) {
+					b_b_key_press = true;
+					b_key_press = false;
+					press_b_b();  
+				} 
+
 				// [ 시스템 메시지 추가 ]
 				p_system_message("B키를 눌렀습니다.");
 				b_key_press = true;
 				break;
 
 			// [ P ]
-			case k_p: 
+			case k_p: press_p();
 				// [ 시스템 메시지 추가 ]
 				p_system_message("P키를 눌렀습니다.");
 
-				if (b_key_press == true) {
+				if (b_key_press) {
 					big_cursor = true;
 					p_key_press = true;
 				}
 
 				b_key_press = false;
-				
 				break;
+
+			// [ D ]
+			case k_d: press_d();
+				// [ 시스템 메시지 추가 ]
+				p_system_message("D키를 눌렀습니다.");
+
+				if (b_key_press) {
+					big_cursor = true;
+					d_key_press = true;
+				}
+
+				b_key_press = false;
+				break;
+
+			// [ G ]
+			case k_g: press_g();
+				// [ 시스템 메시지 추가 ]
+				p_system_message("G키를 눌렀습니다.");
+
+				if (b_key_press) {
+					big_cursor = true;
+					g_key_press = true;
+				}
+
+				b_key_press = false;
+				break;
+
+			// [ S ]
+			case k_s: press_s();
+				// [ 시스템 메시지 추가 ]
+				p_system_message("S를 눌렀습니다.");
+
+				if (b_key_press) {
+					big_cursor = true;
+					s_key_press = true;
+				}
+
+				b_key_press = false;
+				break;
+
+
 
 			case k_none:
 			case k_undef:
@@ -543,7 +603,7 @@ POSITION sw1_next_pos(void) {
 	int move_i = 2, move_j = 4;
 	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
 		for (int j = 1; j < MAP_WIDTH - 1; j++) {
-			if (map[1][i][j] == 'H' || map[1][i][j] == 'T' || map[1][i][j] == 'S' || map[1][i][j] == 'F') {
+			if (map[1][i][j] == 'H' || map[1][i][j] == 'S' || (map[1][i][j] == 'F' && 1 /* 1은 나중에 수정 프레멘과 투사 구분 */)) {
 				if (sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2)) < check_close) {
 					check_close = sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2));
 					move_i = i, move_j = j;
@@ -565,7 +625,7 @@ POSITION sw1_next_pos(void) {
 	// [ 샌드웜 이동 ]
 	POSITION next_pos = pmove(sw1_obj.pos, dir);
 
-	// [ 건물, 장애물, 유닛과 만났을 때 피해가기 ]
+	// [ 건물, 장애물 만났을 때 피해가기 ]
 	if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
 		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
 		map[0][next_pos.row][next_pos.column] == 'R' || map[0][next_pos.row][next_pos.column] == '1' || map[0][next_pos.row][next_pos.column] == '2' || \
@@ -575,7 +635,7 @@ POSITION sw1_next_pos(void) {
 		map[0][next_pos.row][next_pos.column] == 'S' || map[0][next_pos.row][next_pos.column] == 'G' || map[0][next_pos.row][next_pos.column] == 'D' || \
 		map[0][next_pos.row][next_pos.column] == 'A' || map[0][next_pos.row][next_pos.column] == 'S' || map[0][next_pos.row][next_pos.column] == 'F') {
 
-		// [ 건물, 장애물, 유닛이 위, 아래에 있을 때 ]
+		// [ 건물, 장애물 위, 아래에 있을 때 ]
 		if (sw1_obj.pos.row + 1 == next_pos.row || sw1_obj.pos.row - 1 == next_pos.row) {
 			// [ 오른쪽으로 갈 때가 빠른지 왼쪽으로 갈 때가 빠른지 비교 ]
 			double move_left = sqrt(pow(sw1_obj.pos.row - new_dest.row, 2) + pow((sw1_obj.pos.column - 1) - new_dest.column, 2));
@@ -605,7 +665,7 @@ POSITION sw1_next_pos(void) {
 				}
 			}
 		}
-		// [ 건물, 장애물, 유닛이 오른쪽, 왼쪽에 있을 때 ]
+		// [ 건물, 장애물 오른쪽, 왼쪽에 있을 때 ]
 		else if (sw1_obj.pos.column + 1 == next_pos.column || sw1_obj.pos.column - 1 == next_pos.column) {
 			// [ 위로 갈 때가 빠른지 아래로 갈 때가 빠른지 비교 ]
 			double move_up = sqrt(pow((sw1_obj.pos.row - 1) - new_dest.row, 2) + pow(sw1_obj.pos.column - new_dest.column, 2));
@@ -687,14 +747,6 @@ void sw1_move(void) {
 		//e_hav_obj.repr = ' ';
 	}
 
-	// [ 프레멘과 만났을 때 (아직 구현 X) ]
-	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'F') {
-		send_system_message[0] = "샌드웜이 프레멘을 잡아먹었습니다.";
-		p_system_message(send_system_message[0]);
-
-
-	}
-
 	// [ 투사와 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'F') {
 		send_system_message[0] = "샌드웜이 투사를 잡아먹었습니다.";
@@ -706,14 +758,6 @@ void sw1_move(void) {
 	// [ 보병 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'S') {
 		send_system_message[0] = "샌드웜이 보병을 잡아먹었습니다.";
-		p_system_message(send_system_message[0]);
-
-
-	}
-
-	// [ 중전차 만났을 때 (아직 구현 X) ]
-	else if (map[1][sw1_obj.pos.row][sw1_obj.pos.column] == 'T') {
-		send_system_message[0] = "샌드웜이 중전차를 잡아먹었습니다.";
 		p_system_message(send_system_message[0]);
 
 
@@ -734,7 +778,7 @@ POSITION sw2_next_pos(void) {
 	int move_i = 12, move_j = 55;
 	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
 		for (int j = 1; j < MAP_WIDTH - 1; j++) {
-			if (map[1][i][j] == 'H' || map[1][i][j] == 'T' || map[1][i][j] == 'S' || map[1][i][j] == 'F') {
+			if (map[1][i][j] == 'H'  || map[1][i][j] == 'S' || (map[1][i][j] == 'F' && 1 /* 1은 나중에 수정 프레멘 투사 비교 해야됨 */)) {
 				if (sqrt(pow(i - sw2_obj.pos.row, 2) + pow(j - sw2_obj.pos.column, 2)) < check_close) {
 					check_close = sqrt(pow(i - sw2_obj.pos.row, 2) + pow(j - sw2_obj.pos.column, 2));
 					move_i = i, move_j = j;
@@ -880,14 +924,6 @@ void sw2_move(void) {
 		//e_hav_obj.repr = ' ';
 	}
 
-	// [ 프레멘과 만났을 때 (아직 구현 X) ]
-	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'F') {
-		send_system_message[0] = "샌드웜이 프레멘을 잡아먹었습니다.";
-		p_system_message(send_system_message[0]);
-
-
-	}
-
 	// [ 투사와 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'F') {
 		send_system_message[0] = "샌드웜이 투사를 잡아먹었습니다.";
@@ -899,14 +935,6 @@ void sw2_move(void) {
 	// [ 보병 만났을 때 (아직 구현 X) ]
 	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'S') {
 		send_system_message[0] = "샌드웜이 보병을 잡아먹었습니다.";
-		p_system_message(send_system_message[0]);
-
-
-	}
-
-	// [ 중전차 만났을 때 (아직 구현 X) ]
-	else if (map[1][sw2_obj.pos.row][sw2_obj.pos.column] == 'T') {
-		send_system_message[0] = "샌드웜이 중전차를 잡아먹었습니다.";
 		p_system_message(send_system_message[0]);
 
 

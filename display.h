@@ -33,7 +33,8 @@ void display(
 
 // [ KEY 명령어 함수 ]
 void state_spacebar(RESOURCE *resource, CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH], 
-	bool p_key_press, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
+	bool p_key_press, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], bool d_key_press, bool g_key_press,
+	bool b_b_key_press, bool s_key_press);
 
 void state_esc(void);
 
@@ -41,6 +42,15 @@ void press_h(RESOURCE *resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int c
 
 void press_b(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH]);
 
+void press_p(void);
+
+void press_d(void);
+
+void press_g(void);
+
+void press_b_b(void);
+
+void press_s(void);
 
 // [ 시스템 메시지 ]
 void p_system_message(char* new_message);

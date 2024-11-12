@@ -91,7 +91,7 @@ OBJECT_SAMPLE f_hav_obj = {
 	.move_period = 2000,
 	.next_move_time = 2000,
 	.color = COLOR_DEFAULT + 16
-};
+}; 
 
 // [ 적군 하베스터 ]
 OBJECT_SAMPLE e_hav_obj = {
@@ -150,10 +150,13 @@ SAND_WIND sand_wind = {
 int main(void) {
 	srand((unsigned int)time(NULL));
 
+
+
 	init();
 	intro();
 	display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend, big_cursor);
 	p_building(map, check_friend);
+	
 	// [ 시스템 메시지 추가 ]
 	p_system_message("게임이 시작되었습니다.");
 
@@ -232,15 +235,19 @@ int main(void) {
 
 			// [ B ]
 			case k_b: press_b(&resource, cursor, check_friend);
-				if (b_key_press) {
-					b_b_key_press = true;
-					b_key_press = false;
-					press_b_b();  
-				} 
+
+				// [ 병영 ]
+				if (map[0][cursor.current.row][cursor.current.column] == 'P') {
+					if (b_key_press) {
+						press_b_b();
+						b_b_key_press = true;
+						b_key_press = false;
+					}
+				}
 
 				// [ 시스템 메시지 추가 ]
 				p_system_message("B키를 눌렀습니다.");
-				b_key_press = true;
+				b_key_press = true; // 건물 키 입력
 				break;
 
 			// [ P ]
@@ -248,48 +255,57 @@ int main(void) {
 				// [ 시스템 메시지 추가 ]
 				p_system_message("P키를 눌렀습니다.");
 
-				if (b_key_press) {
-					big_cursor = true;
-					p_key_press = true;
+				if (map[0][cursor.current.row][cursor.current.column] == ' ') {
+					if (b_key_press) {
+						big_cursor = true;
+						p_key_press = true;
+					}
 				}
 
 				b_key_press = false;
 				break;
 
 			// [ D ]
-			case k_d: press_d();
+			case k_d: 
 				// [ 시스템 메시지 추가 ]
 				p_system_message("D키를 눌렀습니다.");
-
-				if (b_key_press) {
-					big_cursor = true;
-					d_key_press = true;
+				
+				if (map[0][cursor.current.row][cursor.current.column] == 'P') {
+					if (b_key_press) {
+						press_d();
+						big_cursor = true;
+						d_key_press = true;
+					}
 				}
-
 				b_key_press = false;
 				break;
 
 			// [ G ]
-			case k_g: press_g();
+			case k_g: 
 				// [ 시스템 메시지 추가 ]
 				p_system_message("G키를 눌렀습니다.");
-
-				if (b_key_press) {
-					big_cursor = true;
-					g_key_press = true;
+				if (map[0][cursor.current.row][cursor.current.column] == 'P') {
+					if (b_key_press) {
+						press_g(); 
+						big_cursor = true;
+						g_key_press = true;
+					}
 				}
-
 				b_key_press = false;
 				break;
 
 			// [ S ]
-			case k_s: press_s();
+			case k_s: 
 				// [ 시스템 메시지 추가 ]
 				p_system_message("S를 눌렀습니다.");
 
-				if (b_key_press) {
-					big_cursor = true;
-					s_key_press = true;
+				// [ 은신처 ]
+				if (map[0][cursor.current.row][cursor.current.column] == 'P') {
+					if (b_key_press) {
+						press_s();
+						big_cursor = true;
+						s_key_press = true;
+					}
 				}
 
 				b_key_press = false;

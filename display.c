@@ -442,6 +442,7 @@ void clear_cursor_area(POSITION pos, int check_friend[MAP_HEIGHT][MAP_WIDTH], bo
 	// [ 1 X 1 커서 ]
 	else {
 		reset_to_original_color(pos);  
+		
 	}
 }
 
@@ -488,6 +489,18 @@ void highlight_P_area(POSITION pos, int check_friend[MAP_HEIGHT][MAP_WIDTH], boo
 	else {
 		// [ 1 X 1 커서 출력 ]
 		printc(padd(map_pos, pos), frontbuf[pos.row][pos.column], COLOR_BLACK);
+		
+		// [ 생산자원이 없어서 건물을 설치를 못할 때의 예외처리 2 X 2 잔상 지우기 ]
+		for (int i = 0; i < 3; ++i) {
+			int newRow = pos.row + bigrow[i];
+			int newCol = pos.column + bigcol[i];
+
+			// [ 2 X 2 잔상이 남아있다면 원래 색상으로 되돌리기 ]
+			if (newRow < MAP_HEIGHT && newCol < MAP_WIDTH) { 
+				POSITION newPos = { newRow, newCol }; 
+				reset_to_original_color(newPos); 
+			} 
+		}
 	}
 }
 
@@ -788,6 +801,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIG
 		// [ 초기화 ]
 		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
 	}
+	
 	// [ 숙소를 설치할 수 없을 때 ]
 	else if (d_key_press && resource->spice < 2) {
 		p_system_message("생산자원이 부족하여 건설할 수 없습니다.");
@@ -816,6 +830,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIG
 		// [ 초기화 ]
 		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
 	}
+	
 	// [ 창고를 설치할 수 없을 때 ]
 	else if (d_key_press && resource->spice < 4) {
 		p_system_message("생산자원이 부족하여 건설할 수 없습니다.");
@@ -845,10 +860,12 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIG
 		// [ 초기화 ]
 		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
 	}
+	
 	// [ 병영을 설치할 수 없을 때 ]
 	else if (b_b_key_press && resource->spice < 4) {
 		p_system_message("생산자원이 부족하여 건설할 수 없습니다.");
 	}
+
 
 	// [ 스페이스바로 은신처 설치 ]
 	if (s_key_press && resource->spice >= 5) {
@@ -873,6 +890,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, int check_friend[MAP_HEIG
 		// [ 초기화 ]
 		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
 	}
+	
 	// [ 은신처를 설치할 수 없을 때 ]
 	else if (s_key_press && resource->spice < 5) {
 		p_system_message("생산자원이 부족하여 건설할 수 없습니다.");

@@ -23,6 +23,9 @@
 #define ORDER_WIDTH 50
 #define ORDER_HEIGHT 9
 
+#define MAX_HAV  50   // 하베스터 최대 50마리 까지 보관 가능
+#define MAX_SOLD 50   // 보병 최대 50마리 까지 보관 가능
+
 
 /* ================= 위치와 방향 =================== */
 // 맵에서 위치를 나타내는 구조체
@@ -111,6 +114,11 @@ typedef struct {
 	int move_period;	// '몇 ms마다 한 칸 움직이는지'를 뜻함
 	int next_move_time;	// 다음에 움직일 시간
 	int color;			// 색깔
+	int hp;				// 체력
+	int dps;			// 공격력
+	int attack_period;	// 공격 주기
+	int eyes;			// 시야
+
 } OBJECT_SAMPLE;
  
 
@@ -139,5 +147,9 @@ typedef struct {
 	int next_move_time;
 	int color;
 } SAND_WIND;
+
+
+
+
 
 #endif

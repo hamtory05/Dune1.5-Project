@@ -103,7 +103,8 @@ OBJECT_BUILDING f_base = {
 	.pos3 = {15, 1},
 	.pos4 = {15, 2},
 	.repr = 'B',
-	.layer = 0
+	.layer = 0,
+	.hp = 50
 };
 
 // [ 적군 본진 BASE ]
@@ -113,13 +114,20 @@ OBJECT_BUILDING e_base = {
 	.pos3 = {2, 57},
 	.pos4 = {2, 58},
 	.repr = 'B',
+	.layer = 0,
+	.hp = 50
+};
+
+// [ 초기 스파이스 매장지 아군 ]
+OBJECT_BUILDING start_spice1 = {
+	.pos1 = {12, 1},
+	.repr = '5',
 	.layer = 0
 };
 
-// [ 초기 스파이스 매장지 2개 ]
-OBJECT_BUILDING start_spice = {
-	.pos1 = {12, 1},
-	.pos2 = {5, 58},
+// [ 초기 스파이스 매장지 적군 ]
+OBJECT_BUILDING start_spice2 = {
+	.pos1 = {5, 58},
 	.repr = '5',
 	.layer = 0
 };
@@ -211,11 +219,14 @@ void p_e_plate(OBJECT_BUILDING ep, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int
 }
 
 // [ 초기 스파이스 매장지 2개  아군  적군 출력 함수 ]
-void p_start_spice(OBJECT_BUILDING ss, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	POSITION ss_num[] = { ss.pos1, ss.pos2 };
-	for (int i = 0; i < 2; i++) {
-		map[0][ss_num[i].row][ss_num[i].column] = ss.repr;
-	}
+void p_start_spice1(OBJECT_BUILDING ss, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	POSITION ss_num[] = { ss.pos1 };
+	map[0][ss_num[0].row][ss_num[0].column] = ss.repr;
+}
+
+void p_start_spice2(OBJECT_BUILDING ss, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	POSITION ss_num[] = { ss.pos1 };
+	map[0][ss_num[0].row][ss_num[0].column] = ss.repr;
 }
 
 // [ 바위 1 ~ 4 출력 함수 ]
@@ -240,25 +251,43 @@ void p_rock_4(OBJECT_BUILDING r4, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 	}
 }
 
+OBJECT_BUILDING* SPICE[MAX_SPICE];
+int spi_count = 2;
+
+OBJECT_BUILDING* DOR[MAX_DOR];
+int dor_count = 0;
+
+OBJECT_BUILDING* GAR[MAX_GAR];
+int gar_count = 0;
+
+OBJECT_BUILDING* BAR[MAX_BAR];
+int bar_count = 0;
+
+OBJECT_BUILDING* SHE[MAX_SHE];
+int she_count = 0;
+
+OBJECT_BUILDING* ARE[MAX_ARE];
+int are_count = 0;
+
+OBJECT_BUILDING* FAC[MAX_FAC];
+int fac_count = 0;
+
 // [ 모든 건물 출력 함수 ]
 void p_building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
 	p_f_base(f_base, map, check_friend); // 아군 본진
 	p_e_base(e_base, map, check_friend); // 적군 본진
 	p_f_plate(f_plate, map, check_friend); // 아군 장판
 	p_e_plate(e_plate, map, check_friend); // 적군 장판
-	p_start_spice(start_spice, map); // 초기 스파이스 매장지 아군 1 적군 1
+	p_start_spice1(start_spice1, map); // 초기 스파이스 매장지 아군 
+	p_start_spice1(start_spice2, map); // 초기 스파이스 매장지 적군 
 	p_rock_1(rock_1, map); // 바위 1 
 	p_rock_2(rock_2, map); // 바위 2
 	p_rock_3(rock_3, map); // 바위 3
 	p_rock_4(rock_4, map); // 바위 4
+	SPICE[0] = &start_spice1;
+	SPICE[1] = &start_spice2;
 }
 
-
-// =================================== [ 유닛 ] ======================================= //
-// [ 하베스터 ]
-
-
-// [ 보병 ]
 
 
 // =================================== [ DISPLAY ] ======================================= //
@@ -669,15 +698,26 @@ void clear_sysmes_frame() {
 	}
 }
 
-// [ 시스템 메시지 출력 ]
 void p_system_message(char* new_message) {
-	// [ 메시지를 위로 한 칸씩 밀기 ]
+	// 배열의 마지막 메시지 해제 (동적 할당된 경우)
+	if (save_system_message[6] != NULL) {
+		free(save_system_message[6]);
+		save_system_message[6] = NULL;
+	}
+
+	// 메시지를 위로 한 칸씩 밀기
 	for (int i = 6; i > 0; i--) {
 		save_system_message[i] = save_system_message[i - 1];
 	}
-	save_system_message[0] = new_message;
 
-	// [ 시스템 메시지 초기화 후 메시지 출력 ]
+	// 새 메시지 추가 (안전한 복사)
+	save_system_message[0] = malloc(strlen(new_message) + 1);
+	if (save_system_message[0] != NULL) {
+		strncpy_s(save_system_message[0], strlen(new_message) + 1, new_message, strlen(new_message));
+		save_system_message[0][strlen(new_message)] = '\0'; // 널 종료 보장
+	}
+
+	// 시스템 메시지 초기화 후 메시지 출력
 	clear_sysmes_frame();
 	POSITION pos_system = { 0, 1 };
 	for (int i = 0; i < 7; i++) {
@@ -693,7 +733,7 @@ void p_system_message(char* new_message) {
 // [ 스페이스 바 키를 눌렀을 때 ]
 void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj, OBJECT_SAMPLE* e_hav_obj, 
 	int check_friend[MAP_HEIGHT][MAP_WIDTH], bool p_key_press, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], bool d_key_press, bool g_key_press,
-	bool b_b_key_press, bool s_key_press) {
+	bool b_b_key_press, bool s_key_press, OBJECT_SAMPLE* havs[MAX_HAV], bool* space_key_press) {
 
 	// [ 변수 지정 ]
 	POSITION curr = cursor.current;
@@ -711,6 +751,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	switch (cell) {
 	case ' ':
 		prints(padd(state_mes_pos, pos_state), "(빈)지형 : 사막 지형");
+		*space_key_press = false;
 		break;
 
 	// [ 본진 & 병영 ]
@@ -738,6 +779,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 			order_message[0] = "보병 생산(S / ESC)";
 			prints(padd(order_mes_pos[0], pos_order), order_message[0]);
 		}
+		*space_key_press = false;
 		break;
 
 	// [ 장판 ] 
@@ -749,29 +791,34 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 		else if (check_friend[curr.row][curr.column] == 2) {
 			prints(padd(state_mes_pos, pos_state), "건물 : 적군 장판");
 		}
+		*space_key_press = false;
 		break;
 
 	// [ 스파이스 ]
 	case '1': case '2': case '3': case '4': case '5':
 	case '6': case '7': case '8': case '9':
 		prints(padd(state_mes_pos, pos_state), "건물 : 스파이스");
+		*space_key_press = false;
 		break;
 
 	// [ 바위 ]
 	case 'R':
 		prints(padd(state_mes_pos, pos_state), "건물 : 바위");
+		*space_key_press = false;
 		break;
 
 	// [ 숙소 ]
 	case 'D':
 		prints(padd(state_mes_pos, pos_state), "건물 : 숙소");
 		prints(padd(state_mes2_pos, pos_state), "인구 최대치가 10 증가한다.");
+		*space_key_press = false;
 		break;
 
 	// [ 창고 ]
 	case 'G':
 		prints(padd(state_mes_pos, pos_state), "건물 : 창고");
 		prints(padd(state_mes2_pos, pos_state), "스파이스 보관 최대치가 10 증가한다.");
+		*space_key_press = false;
 		break;
 
 	// [ 은신처 & 보병 ]
@@ -790,7 +837,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 			order_message[0] = "M : 이동, P : 순찰";
 			prints(padd(order_mes_pos[0], pos_order), order_message[0]);
 		}
-
+		*space_key_press = false;
 		break;
 
 	// [ 투기장 ]
@@ -799,6 +846,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 		prints(padd(state_mes2_pos, pos_state), "투사를 생산할 수 있다.");
 		order_message[0] = "적군만 투사를 생산할 수 있습니다.";
 		prints(padd(order_mes_pos[0], pos_order), order_message[0]);
+		*space_key_press = false;
 		break;
 
 	// [ 공장 & 프레멘 & 투사 ]
@@ -825,42 +873,48 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 			prints(padd(order_mes_pos[0], pos_order), order_message[0]);
 		}
 
+		*space_key_press = false;
 		break;
 
 
 	/* ===== [유닛] ====== */
 	// [ 하베스터 ]
 	case 'H':
-		if (colorbuf[curr.row][curr.column] == COLOR_DEFAULT + 16) {
-			char mes_buf[100];
-			// [ 상태 메시지 ]
-			prints(padd(state_mes_pos, pos_state), "유닛 : 아군 하베스터");
-			sprintf_s(mes_buf, sizeof(mes_buf), "체력: %d, 공격력: 0, 이동주기: 2초, 시야: 0", f_hav_obj->hp);
-			prints(padd(state_mes2_pos, pos_state), mes_buf);
+		for (int i = 0; i < MAX_HAV; i++) {
+			if (havs[i] != NULL && havs[i]->pos.row == curr.row && havs[i]->pos.column == curr.column && colorbuf[curr.row][curr.column] == COLOR_DEFAULT + 16) {
+				char mes_buf[100];
+				// [ 상태 메시지 ]
+				prints(padd(state_mes_pos, pos_state), "유닛 : 아군 하베스터");
+				sprintf_s(mes_buf, sizeof(mes_buf), "체력: %d, 공격력: 0, 이동주기: 2초, 시야: 0", havs[i]->hp);
+				prints(padd(state_mes2_pos, pos_state), mes_buf);
 
-			// [ 하베스터 초상화 ]
-			prints(padd(state_mes4_pos, pos_state), "     -----------------");
-			prints(padd(state_mes5_pos, pos_state), "     |   _________   |");
-			prints(padd(state_mes6_pos, pos_state), "     |  /[=] | [=]\\  |");
-			prints(padd(state_mes7_pos, pos_state), "     |  |[=] | [=]|  |");
-			prints(padd(state_mes8_pos, pos_state), "     |  -----------  |");
-			prints(padd(state_mes9_pos, pos_state), "     |   O       O   | ");
-			prints(padd(state_mes10_pos, pos_state), "     |               |");
-			prints(padd(state_mes11_pos, pos_state), "     -----------------");
-			// [ 명령 메시지 ]
-			prints(padd(order_mes_pos[0], pos_order), "H : 수확, M : 이동");
+				// [ 하베스터 초상화 ]
+				prints(padd(state_mes4_pos, pos_state), "     -----------------");
+				prints(padd(state_mes5_pos, pos_state), "     |   _________   |");
+				prints(padd(state_mes6_pos, pos_state), "     |  /[=] | [=]\\  |");
+				prints(padd(state_mes7_pos, pos_state), "     |  |[=] | [=]|  |");
+				prints(padd(state_mes8_pos, pos_state), "     |  -----------  |");
+				prints(padd(state_mes9_pos, pos_state), "     |   O       O   | ");
+				prints(padd(state_mes10_pos, pos_state), "     |               |");
+				prints(padd(state_mes11_pos, pos_state), "     -----------------");
+
+				// [ 명령 메시지 ]
+				prints(padd(order_mes_pos[0], pos_order), "H : 수확, M : 이동");
+			}
+			else if (colorbuf[curr.row][curr.column] == COLOR_DEFAULT + 64) {
+				char mes_buf[100];
+				prints(padd(state_mes_pos, pos_state), "유닛 : 적군 하베스터");
+				sprintf_s(mes_buf, sizeof(mes_buf), "체력: %d, 공격력: 0, 이동주기: 2초, 시야: 0", e_hav_obj->hp);
+				prints(padd(state_mes2_pos, pos_state), mes_buf);
+			}
 		}
-		else if (colorbuf[curr.row][curr.column] == COLOR_DEFAULT + 64) {
-			char mes_buf[100];
-			prints(padd(state_mes_pos, pos_state), "유닛 : 적군 하베스터");
-			sprintf_s(mes_buf, sizeof(mes_buf), "체력: %d, 공격력: 0, 이동주기: 2초, 시야: 0", e_hav_obj->hp);
-			prints(padd(state_mes2_pos, pos_state), mes_buf);
-		}
+
 		break;
 
 	// [ 샌드웜 ]
 	case 'W':
 		prints(padd(state_mes_pos, pos_state), "유닛 : 샌드웜");
+		*space_key_press = false;
 		break;
 
 	// [ 중전차 ]
@@ -868,6 +922,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 		prints(padd(state_mes_pos, pos_state), "유닛 : 중전차");
 		order_message[0] = "적군 유닛은 이동, 순찰 명령어를 사용할 수 없습니다.";
 		prints(padd(order_mes_pos[0], pos_order), order_message[0]);
+		*space_key_press = false;
 		break;
 	}
 
@@ -904,18 +959,41 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 
 	// [ 스페이스바로 숙소 설치 ]
 	if (d_key_press && resource->spice >= 2) {
-
+		int input_curr[4][2] = { 0 };
 		// [ 커서 자리 P ]
 		map[0][curr.row][curr.column] = 'D';
 		check_friend[curr.row][curr.column] = 1;
+		input_curr[0][0] = curr.row;
+		input_curr[0][1] = curr.column;
 
+		int idx = 1;
 		// [ 커서 주변 자리 P ]
 		for (int i = 0; i < 8; ++i) {  // 8방향 검사
 			int newRow = curr.row + pRow[i];
 			int newCol = curr.column + pCol[i];
 			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
 				map[0][newRow][newCol] = 'D';
+				input_curr[idx][0] = newRow;
+				input_curr[idx][1] = newCol;
+				idx++;
 			}
+		}
+
+		OBJECT_BUILDING new_dor = {
+			{ input_curr[0][0], input_curr[0][1] },
+			{ input_curr[1][0], input_curr[1][1] },
+			{ input_curr[2][0], input_curr[2][1] },
+			{ input_curr[3][0], input_curr[3][1] },
+			'D', 0, 10
+
+		};
+
+		// 배열에 숙소 추가
+		DOR[dor_count++] = &new_dor;
+
+		// [ 맵에 숙소 위치 반영 ]
+		for (int i = 0; i < 4; ++i) {
+			map[1][input_curr[i][0]][input_curr[i][1]] = new_dor.repr;
 		}
 
 		// [ 생산 자원 소모 ]
@@ -936,8 +1014,15 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	// [ 스페이스바로 창고 설치 ]
 	if (g_key_press && resource->spice >= 4) {
 		// [ 커서 자리 P ]
+		int input_curr[4][2] = { 0 };
+
 		map[0][curr.row][curr.column] = 'G';
 		check_friend[curr.row][curr.column] = 1;
+
+		input_curr[0][0] = curr.row;
+		input_curr[0][1] = curr.column;
+
+		int idx = 1;
 
 		// [ 커서 주변 자리 P ]
 		for (int i = 0; i < 8; ++i) {  // 8방향 검사
@@ -945,8 +1030,28 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 			int newCol = curr.column + pCol[i];
 			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
 				map[0][newRow][newCol] = 'G';
+				input_curr[idx][0] = newRow;
+				input_curr[idx][1] = newCol;
+				idx++;
 			}
 		}
+
+		OBJECT_BUILDING new_gar = {
+			{ input_curr[0][0], input_curr[0][1] },
+			{ input_curr[1][0], input_curr[1][1] },
+			{ input_curr[2][0], input_curr[2][1] },
+			{ input_curr[3][0], input_curr[3][1] },
+			'G', 0, 10
+		};
+
+		// 배열에 창고 추가
+		GAR[gar_count++] = &new_gar;
+
+		// [ 맵에 창고 위치 반영 ]
+		for (int i = 0; i < 4; ++i) {
+			map[1][input_curr[i][0]][input_curr[i][1]] = new_gar.repr;
+		}
+
 
 		// [ 생산 자원 소모 ]
 		resource->spice -= 2;
@@ -965,9 +1070,16 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 
 	// [ 스페이스바로 병영 설치 ]
 	if (b_b_key_press && resource->spice >= 4) {
+		int input_curr[4][2] = { 0 };
+
 		map[0][curr.row][curr.column] = 'B';
 		check_friend[curr.row][curr.column] = 1;
 		base_barr_check[curr.row][curr.column] = 2;
+
+		input_curr[0][0] = curr.row;
+		input_curr[0][1] = curr.column;
+
+		int idx = 1;
 
 		// [ 커서 주변 자리 P ]
 		for (int i = 0; i < 8; ++i) {  // 8방향 검사
@@ -976,8 +1088,28 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
 				map[0][newRow][newCol] = 'B';
 				base_barr_check[newRow][newCol] = 2;
+				input_curr[idx][0] = newRow;
+				input_curr[idx][1] = newCol;
+				idx++;
 			}
 		}
+
+		OBJECT_BUILDING new_bar = {
+			{ input_curr[0][0], input_curr[0][1] },
+			{ input_curr[1][0], input_curr[1][1] },
+			{ input_curr[2][0], input_curr[2][1] },
+			{ input_curr[3][0], input_curr[3][1] },
+			'B', 0, 10
+		};
+
+		// 배열에 병영 추가
+		BAR[bar_count++] = &new_bar;
+
+		// [ 맵에 병영 위치 반영 ]
+		for (int i = 0; i < 4; ++i) {
+			map[1][input_curr[i][0]][input_curr[i][1]] = new_bar.repr;
+		}
+
 
 		// [ 생산 자원 소모 ]
 		resource->spice -= 4;
@@ -996,9 +1128,16 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 
 	// [ 스페이스바로 은신처 설치 ]
 	if (s_key_press && resource->spice >= 5) {
+		int input_curr[4][2] = { 0 };
+
 		map[0][curr.row][curr.column] = 'S';
 		check_friend[curr.row][curr.column] = 1;
 		shle_sold_check[curr.row][curr.column] = 1; // 은신처 - 1, 보병 - 2
+
+		input_curr[0][0] = curr.row;
+		input_curr[0][1] = curr.column;
+
+		int idx = 1;
 
 		// [ 커서 주변 자리 P ]
 		for (int i = 0; i < 8; ++i) {  // 8방향 검사
@@ -1007,7 +1146,26 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
 				map[0][newRow][newCol] = 'S';
 				shle_sold_check[newRow][newCol] = 1;
+				input_curr[idx][0] = newRow;
+				input_curr[idx][1] = newCol;
+				idx++;
 			}
+		}
+
+		OBJECT_BUILDING new_she = {
+			{ input_curr[0][0], input_curr[0][1] },
+			{ input_curr[1][0], input_curr[1][1] },
+			{ input_curr[2][0], input_curr[2][1] },
+			{ input_curr[3][0], input_curr[3][1] },
+			'D', 0, 10
+		};
+
+		// 배열에 은신처 추가
+		SHE[she_count++] = &new_she; 
+
+		// [ 맵에 은신처 위치 반영 ]
+		for (int i = 0; i < 4; ++i) {
+			map[1][input_curr[i][0]][input_curr[i][1]] = new_she.repr;
 		}
 
 		// [ 생산 자원 소모 ]
@@ -1049,7 +1207,7 @@ void press_h(RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int c
 			if (hav_count < MAX_HAV) {
 				OBJECT_SAMPLE new_hav = { 
 					{ 14, 2 }, { 14, 2 }, 'H', 2000, 2000, 
-					COLOR_DEFAULT + 16, 70, 0, 0, 0 
+					COLOR_DEFAULT + 16, 70, 0, 0, 0, 4000, 4000
 				};
 
 				// [ 하베스터를 배열에 추가 ]

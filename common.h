@@ -26,6 +26,14 @@
 #define MAX_HAV  50   // 하베스터 최대 50마리 까지 보관 가능
 #define MAX_SOLD 50   // 보병 최대 50마리 까지 보관 가능
 
+#define MAX_SPICE 100
+#define MAX_DOR  50
+#define MAX_GAR  50
+#define MAX_BAR  50
+#define MAX_SHE  50
+#define MAX_ARE  50
+#define MAX_FAC  50
+
 
 /* ================= 위치와 방향 =================== */
 // 맵에서 위치를 나타내는 구조체
@@ -118,6 +126,8 @@ typedef struct {
 	int dps;			// 공격력
 	int attack_period;	// 공격 주기
 	int eyes;			// 시야
+	int gather_time;    // 하베스터 수확 시간
+	int gather_next_time; // 하베스터 다음 수확 시간 추가
 
 } OBJECT_SAMPLE;
  
@@ -130,6 +140,7 @@ typedef struct {
 	POSITION pos4; // 건물 크기 4
 	char repr;     // 건물 이름
 	int layer;     // 몇번 째 레이어에 들어가는건지 구분 <-- 필요하면 사용
+	int hp;        // 건물 내구도
 } OBJECT_BUILDING;
 
 // [ 모래 폭풍 ]

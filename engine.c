@@ -6,6 +6,7 @@
 #include <time.h>
 #include <assert.h>
 #include <math.h>
+#include <float.h>
 #include "common.h"
 #include "io.h"
 #include "display.h"
@@ -53,11 +54,18 @@ void reset_key_false();
 // [ 하베스터 ]
 OBJECT_SAMPLE* havs[MAX_HAV]; 
 int hav_count = 1; 
-POSITION harvest_next_pos(OBJECT_SAMPLE havs[MAX_HAV], int hav_count);
-void harvest_move_all(OBJECT_SAMPLE havs[MAX_HAV], int hav_count, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-void harvest_gather_spice(char spice_value, int index, OBJECT_SAMPLE havs[MAX_HAV], char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
+int selected_harvester = -1; // 선택된 하베스터 인덱스 (-1: 선택 안됨)
 
+void hav_reset(void);
+void harvest_move_all(OBJECT_SAMPLE havs[MAX_HAV], int hav_count, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], OBJECT_BUILDING* SPICE);
+int harvest_gather_spice(OBJECT_BUILDING* spice, OBJECT_SAMPLE* hav, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
+POSITION harvest_next_move(OBJECT_SAMPLE* hav, POSITION new_dest);
+POSITION harvest_set_dest(POSITION curr, OBJECT_SAMPLE* hav, OBJECT_BUILDING* SPICE);
+void handle_harvester_input(CURSOR cursor, OBJECT_SAMPLE havs[MAX_HAV], int hav_count, OBJECT_BUILDING* SPICE);
 
+int spice_in_progress[MAX_SPICE] = { -1 }; // 각 스파이스 매장지에 대한 작업 상태 (-1: 작업 없음)
+extern OBJECT_BUILDING* SPICE;
+extern spi_count;
 
 /* ================= control =================== */
 int sys_clock = 0;		// system-wide clock(ms)
@@ -66,6 +74,8 @@ CURSOR cursor = { { 1, 1 }, {1, 1} };
 int move_count = 0;
 int move_check[2] = { 0 };
 char spice_number[9] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+int spice_plus_value = 0;
+int* spice_plus = &spice_plus_value;
 
 /* ================= game data =================== */
 char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH] = { 0 };  // 2, 16, 60
@@ -73,6 +83,8 @@ char state_map[STATE_HEIGHT][STATE_WIDTH] = { 0 }; // 16, 50
 char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH] = { 0 }; // 6 60
 char order_map[ORDER_HEIGHT][ORDER_WIDTH] = { 0 }; // 6 60
 int check_friend[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 0 --> 아무것도 아님, 1 --> 아군, 2 --> 적군
+int hav_gather_spice[MAX_HAV] = { 0 }; // 0 스파이스를 캐지 않음 / 1면 스파이스를 캔 것
+POSITION pre_hav_dest[MAX_HAV] = { 0 };
 
 bool b_key_press = false; // 장판 설치 할 때 b키를 눌렀는지 확인
 bool big_cursor = false; // 2X2 커서 활성화, 비활성화
@@ -83,6 +95,8 @@ bool b_b_key_press = false; // 병영 설치 확인
 bool s_key_press = false;  // 은신처 설치 확인
 bool space_key_press = false; // 스페이스바가 눌렸는지 확인 / false = 비활성화, true = 활성하ㅗ
 bool hav_move = false;
+bool h_key_press = false;
+bool space_and_h_key = false;
 
 bool m_key_press = false; // 이동 확인
 bool p_p_key_press = false; // 순찰 확인
@@ -115,7 +129,9 @@ OBJECT_SAMPLE f_hav_obj = {
 	.hp = 70,
 	.dps = 0,
 	.attack_period = 0,
-	.eyes = 0
+	.eyes = 0, 
+	.gather_time = 4000,
+	.gather_next_time = 4000
 }; 
 
 // [ 적군 하베스터 ]
@@ -129,7 +145,9 @@ OBJECT_SAMPLE e_hav_obj = {
 	.hp = 70,
 	.dps = 0,
 	.attack_period = 0,
-	.eyes = 0
+	.eyes = 0,
+	.gather_time = 4000,
+	.gather_next_time = 4000
 };
 
 // [ 샌드웜 1 ]
@@ -179,8 +197,7 @@ SAND_WIND sand_wind = {
 int main(void) {
 	srand((unsigned int)time(NULL));
 
-
-
+	hav_reset();
 	init();
 	intro();
 	display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend, big_cursor);
@@ -242,11 +259,12 @@ int main(void) {
 				break;
 
 			// [ SPACE ]
-			case k_space: state_spacebar(&resource, cursor, &f_hav_obj, &e_hav_obj, check_friend, p_key_press, map, d_key_press, g_key_press, 
-				b_b_key_press, s_key_press);
+			case k_space: 
+				space_key_press = true;
+				state_spacebar(&resource, cursor, &f_hav_obj, &e_hav_obj, check_friend, p_key_press, map, d_key_press, g_key_press, 
+				b_b_key_press, s_key_press, havs, &space_key_press);
 				// [ 시스템 메시지 추가 ]
 				p_system_message("스페이스바를 눌렀습니다.");
-				space_key_press = true;
 
 				// [ KEY FALSE ]
 				reset_key_false();
@@ -254,6 +272,7 @@ int main(void) {
 
 			// [ H ]
 			case k_h: press_h(&resource, map, check_friend, cursor, &f_hav_obj, hav_count, havs);
+				h_key_press = true;
 				// [ 시스템 메시지 추가 ]
 				p_system_message("H키를 눌렀습니다.");
 				break;
@@ -347,8 +366,10 @@ int main(void) {
 		// [ 오브젝트 동작 ]
 		d_eagle_move();
 		sw1_move();
-		sw2_move();
-		harvest_move_all(*havs, hav_count, map);
+		sw2_move(); 
+
+		// 하베스터 움직이기
+		harvest_move_all(*havs, hav_count, map, SPICE);
 
 		
 
@@ -361,6 +382,14 @@ int main(void) {
 
 
 /* ================= [ subfunctions ] =================== */
+
+// [ 초기 하베스터 초기화 ]
+void hav_reset(void) {
+	for (int i = 0; i < MAX_HAV; i++) {
+		havs[i] = NULL; // 포인터 초기화
+	}
+	havs[0] = &f_hav_obj; // 첫 번째 하베스터 초기화
+}
 
 // [ 인트로 ]
 void intro(void) {
@@ -765,7 +794,14 @@ void sw1_move(void) {
 		send_system_message[0] = "샌드웜이 스파이스 매장지를 생성했습니다.";
 		p_system_message(send_system_message[0]);
 
-		map[0][sw1_obj.pos.row][sw1_obj.pos.column] = spice_number[r];
+		OBJECT_BUILDING new_spice = {
+			.pos1 = {sw1_obj.pos.row, sw1_obj.pos.column},
+			.repr = spice_number[r],
+			.layer = 0
+		};
+
+		SPICE[spi_count] = new_spice;
+		spi_count++;
 	}
 	sw1_obj.pos = sw1_next_pos();
 
@@ -941,7 +977,14 @@ void sw2_move(void) {
 		send_system_message[0] = "샌드웜이 스파이스 매장지를 생성했습니다.";
 		p_system_message(send_system_message[0]);
 
-		map[0][sw2_obj.pos.row][sw2_obj.pos.column] = spice_number[r];
+		OBJECT_BUILDING new_spice = {
+			.pos1 = {sw1_obj.pos.row, sw1_obj.pos.column},
+			.repr = spice_number[r],
+			.layer = 0
+		};
+
+		SPICE[spi_count] = new_spice;
+		spi_count++;
 	}
 	sw2_obj.pos = sw2_next_pos();
 
@@ -1250,56 +1293,64 @@ void sand_wind_move(void) {
 	sand_wind.next_move_time = sys_clock + sand_wind.move_period;
 }
 
-// [ 하베스터 움직임 함수 ]
-POSITION harvest_next_pos(OBJECT_SAMPLE havs[MAX_HAV], int hav_count) {
-	POSITION curr = cursor.current;
-	havs[0] = f_hav_obj;
-	int check_hav = 0;
 
-	// [ 하베스터 선택 ]
+
+// [ 하베스터 선택 및 스파이스 선택 ]
+void handle_harvester_input(CURSOR cursor, OBJECT_SAMPLE havs[MAX_HAV], int hav_count, OBJECT_BUILDING* SPICE) {
+	POSITION curr = cursor.current;
+
+	// [ 스페이스바로 하베스터 선택 ]
 	if (space_key_press && map[1][curr.row][curr.column] == 'H') {
 		for (int i = 0; i < hav_count; i++) {
 			if (havs[i].pos.row == curr.row && havs[i].pos.column == curr.column) {
-				check_hav = i;
+				selected_harvester = i; // 하베스터 선택
+				p_system_message("하베스터 선택 완료.");
 				space_key_press = false;
+				space_and_h_key = true;
 				break;
 			}
 		}
 	}
 
-	// [ 현재 위치와 목적지를 비교해서 이동 방향 결정 ]
-	POSITION diff = psub(havs[check_hav].dest, havs[check_hav].pos);
-	DIRECTION dir;
+	// [ H키로 스파이스 선택 및 목적지 설정 ]
+	if (space_and_h_key && h_key_press && selected_harvester != -1) {
+		if (map[0][curr.row][curr.column] >= '1' && map[0][curr.row][curr.column] <= '9') {
+			havs[selected_harvester].dest = harvest_set_dest(curr, &havs[selected_harvester], SPICE);
+			p_system_message("스파이스 위치를 목적지로 설정.");
+			selected_harvester = -1;
+			h_key_press = false; // 처리 완료
+			space_and_h_key = false;
+		}
+		else {
+			h_key_press = false;
+			p_system_message("스파이스가 선택되지 않았습니다. 다시 h키를 눌러주세요");
+		}
+	}
+}
 
-	// [ 하베스터 스파이스로 이동 ]
-	POSITION new_dest = havs[check_hav].dest;
+// [ 하베스터 목적지 정하기 ]
+POSITION harvest_set_dest(POSITION curr, OBJECT_SAMPLE* hav, OBJECT_BUILDING* SPICE) {
+	POSITION new_dest = hav->dest;
 
+	// [ 커서가 스파이스 위에 있을 때 ]
 	for (int i = 0; i < 9; i++) {
-		if (map[0][curr.row][curr.column] == spice_number[i]) { // 커서가 스파이스 위에 있을 때
-			// 스파이스 아래에서 수확해야하는데 아래가 맵 밖일 때
-			if (curr.row + 1 == MAP_HEIGHT - 1) {
-				// 옆에서 수확해야 하는데 왼쪽이 맵 밖일 때
-				if (curr.column - 1 == 0) {
-					new_dest.row = curr.row;
-					new_dest.column = curr.column + 1;
-				}
-				else {
-					new_dest.row = curr.row;
-					new_dest.column = curr.column - 1;
-				}
-			}
-			// 스파이스 아래서 수확할 수 있을 때
-			else {
-				new_dest.row = curr.row + 1;
-				new_dest.column = curr.column;
-			}
+		if (curr.row == SPICE[i].pos1.row && curr.column == SPICE[i].pos1.column) {
+			new_dest.row = SPICE[i].pos1.row;
+			new_dest.column = SPICE[i].pos1.column;
+			pre_hav_dest[i] = new_dest;
+			break; 
 		}
 	}
 
-	havs[check_hav].dest = new_dest;
+	return new_dest;
+}
 
+// [ 하베스터 이동 ]
+POSITION harvest_next_move(OBJECT_SAMPLE* hav, POSITION new_dest) {
+	POSITION diff = psub(new_dest, hav->pos);
+	DIRECTION dir;
 
-	// [ 가로축, 세로축 거리를 비교해서 더 먼 쪽 축으로 이동 ]
+	// 가로축과 세로축 중 더 먼 쪽으로 이동 방향 결정
 	if (abs(diff.row) >= abs(diff.column)) {
 		dir = (diff.row >= 0) ? d_down : d_up;
 	}
@@ -1307,130 +1358,164 @@ POSITION harvest_next_pos(OBJECT_SAMPLE havs[MAX_HAV], int hav_count) {
 		dir = (diff.column >= 0) ? d_right : d_left;
 	}
 
-	// [ 하베스터 이동 ]
-	POSITION next_pos = pmove(havs[check_hav].pos, dir);
+	// 기본 이동
+	POSITION next_pos = pmove(hav->pos, dir);
 
-	// [ 건물, 장애물 만났을 때 피해가기 ]
-	if (1 <= next_pos.row && next_pos.row <= MAP_HEIGHT - 2 && \
-		1 <= next_pos.column && next_pos.column <= MAP_WIDTH - 2 && \
-		map[0][next_pos.row][next_pos.column] == 'R' || map[0][next_pos.row][next_pos.column] == '1' || map[0][next_pos.row][next_pos.column] == '2' || \
-		map[0][next_pos.row][next_pos.column] == '3' || map[0][next_pos.row][next_pos.column] == '4' || map[0][next_pos.row][next_pos.column] == '5' || \
-		map[0][next_pos.row][next_pos.column] == '6' || map[0][next_pos.row][next_pos.column] == '7' || map[0][next_pos.row][next_pos.column] == '8' || \
-		map[0][next_pos.row][next_pos.column] == '9' || map[0][next_pos.row][next_pos.column] == 'B' || map[0][next_pos.row][next_pos.column] == 'P' || \
-		map[0][next_pos.row][next_pos.column] == 'S' || map[0][next_pos.row][next_pos.column] == 'G' || map[0][next_pos.row][next_pos.column] == 'D' || \
-		map[0][next_pos.row][next_pos.column] == 'A' || map[0][next_pos.row][next_pos.column] == 'S' || map[0][next_pos.row][next_pos.column] == 'F') {
+	// 맵 내 범위 확인
+	if (next_pos.row < 1 || next_pos.row >= MAP_HEIGHT - 1 ||
+		next_pos.column < 1 || next_pos.column >= MAP_WIDTH - 1) {
+		return hav->pos; // 이동할 수 없으면 현재 위치 유지
+	}
 
-		// [ 건물, 장애물 위, 아래에 있을 때 ]
-		if (havs[check_hav].pos.row + 1 == next_pos.row || havs[check_hav].pos.row - 1 == next_pos.row) {
-			// [ 오른쪽으로 갈 때가 빠른지 왼쪽으로 갈 때가 빠른지 비교 ]
-			double move_left = sqrt(pow(havs[check_hav].pos.row - new_dest.row, 2) + pow((havs[check_hav].pos.column - 1) - new_dest.column, 2));
-			double move_right = sqrt(pow(havs[check_hav].pos.row - new_dest.row, 2) + pow((havs[check_hav].pos.column + 1) - new_dest.column, 2));
-			// [ 오른쪽으로 가기 ]
-			if (move_left < move_right) {
-				// < 오른쪽으로 갔을 때 맵을 벗어나게 되는지를 체크 >
-				if (havs[check_hav].pos.column + 1 != MAP_WIDTH - 1) { // 맵을 벗어나지 않으면 오른쪽
-					next_pos.row += 1;
-					next_pos.column = havs[check_hav].pos.column + 1;
-				}
-				else { // 맵을 벗어나면 왼쪽
-					next_pos.row -= 1;
-					next_pos.column = havs[check_hav].pos.column - 1;
-				}
+	// 이동하려는 위치가 장애물인지 확인
+	char target_tile = map[0][next_pos.row][next_pos.column];
+	if (target_tile != ' ' && (target_tile < '1' || target_tile > '9')) {
+		// 장애물을 회피하기 위해 대체 경로 계산
+		double best_distance = DBL_MAX;
+		POSITION best_pos = hav->pos;
+
+		// 상하좌우로 가능한 대체 경로 탐색
+		DIRECTION alternate_dirs[] = { d_up, d_down, d_left, d_right };
+		for (int i = 0; i < 4; i++) {
+			POSITION alt_pos = pmove(hav->pos, alternate_dirs[i]);
+
+			// 대체 경로가 맵 내에 있는지 확인
+			if (alt_pos.row < 1 || alt_pos.row >= MAP_HEIGHT - 1 ||
+				alt_pos.column < 1 || alt_pos.column >= MAP_WIDTH - 1) {
+				continue; // 맵 밖이면 스킵
 			}
-			// [ 왼쪽으로 가기 ]
-			else {
-				// < 왼쪽으로 갔을 때 맵을 벗어나게 되는지를 체크 >
-				if (havs[check_hav].pos.column - 1 != 0) { // 맵을 벗어나지 않으면 왼쪽
-					next_pos.row -= 1;
-					next_pos.column = havs[check_hav].pos.column - 1;
-				}
-				else { // 맵을 벗어나면 오른쪽
-					next_pos.row += 1;
-					next_pos.column = havs[check_hav].pos.column + 1;
+
+			// 대체 경로가 장애물이 아닌지 확인
+			char alt_tile = map[0][alt_pos.row][alt_pos.column];
+			if (alt_tile == ' ' || (alt_tile >= '1' && alt_tile <= '9')) {
+				double distance = sqrt(pow(new_dest.row - alt_pos.row, 2) + pow(new_dest.column - alt_pos.column, 2));
+				if (distance < best_distance) {
+					best_distance = distance;
+					best_pos = alt_pos;
 				}
 			}
 		}
-		// [ 건물, 장애물 오른쪽, 왼쪽에 있을 때 ]
-		else if (havs[check_hav].pos.column + 1 == next_pos.column || havs[check_hav].pos.column - 1 == next_pos.column) {
-			// [ 위로 갈 때가 빠른지 아래로 갈 때가 빠른지 비교 ]
-			double move_up = sqrt(pow((havs[check_hav].pos.row - 1) - new_dest.row, 2) + pow(havs[check_hav].pos.column - new_dest.column, 2));
-			double move_down = sqrt(pow((havs[check_hav].pos.row + 1) - new_dest.row, 2) + pow(havs[check_hav].pos.column - new_dest.column, 2));
-			// [ 위로 가기 ]
-			if (move_up < move_down) {
-				// < 위로 갔을 때 맵을 벗어나는지 확인 >
-				if (havs[check_hav].pos.row + 1 != 0) { // 맵을 벗어나지 않으면 위로
-					next_pos.column += 1;
-					next_pos.row = havs[check_hav].pos.row + 1;
-				}
-				else { // 맵을 벗어나면 아래로
-					next_pos.column -= 1;
-					next_pos.row = havs[check_hav].pos.row - 1;
-				}
-			}
-			// [ 아래로 가기 ]
-			else {
-				if (havs[check_hav].pos.row - 1 != MAP_HEIGHT - 1) { // 맵을 벗어나면 아래로
-					next_pos.column -= 1;
-					next_pos.row = havs[check_hav].pos.row - 1;
-				}
-				else { // 맵을 벗어나면 위로
-					next_pos.column += 1;
-					next_pos.row = havs[check_hav].pos.row + 1;
-				}
-			}
-		}
-		return next_pos;
+
+		return best_pos; // 가장 가까운 대체 경로 반환
 	}
-	return next_pos;
-}
 
-void harvest_move_all(OBJECT_SAMPLE havs[MAX_HAV], int hav_count, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	// [ 이동 주기 체크 ]
-	if (sys_clock <= f_hav_obj.next_move_time) {
-		return;
-	}
-	
-	for (int i = 0; i < hav_count; i++) {
-		// [ 목적지 도달 여부 확인 ]
-		if (havs[i].pos.row == havs[i].dest.row && havs[i].pos.column == havs[i].dest.column) {
-			// [ 스파이스 수확 ]
-			char spice_value = map[0][havs[i].pos.row][havs[i].pos.column];
-			if (spice_value >= '1' && spice_value <= '9') {
-				harvest_gather_spice(spice_value, i, havs, map); // 수확 함수로 분리
-			}
-			// 대기 (다음 이동 없음)
-			continue;
-		}
-
-		// [ 하베스터 위치 업데이트 (이전 위치에서 제거) ]
-		map[1][havs[i].pos.row][havs[i].pos.column] = -1;
-
-		// [ 다음 위치 계산 및 이동 ]
-		havs[i].pos = harvest_next_pos(havs, hav_count);
-
-		// [ 새로운 위치에 하베스터 표시 ]
-		map[1][havs[i].pos.row][havs[i].pos.column] = havs[i].repr;
-
-		// [ 이동 주기 갱신 ]
-		havs[i].next_move_time = sys_clock + havs[i].move_period;
-	}
+	return next_pos; // 기본 이동 가능하면 반환
 }
 
 // [ 스파이스 수확 처리 함수 ]
-void harvest_gather_spice(char spice_value, int index, OBJECT_SAMPLE havs[MAX_HAV], char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
-	int spice_int = spice_value - '0'; // 스파이스 값을 정수로 변환
+int harvest_gather_spice(OBJECT_BUILDING* spice, OBJECT_SAMPLE* hav, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+	if (sys_clock <= hav->gather_time) {
+		return 0; // 아직 수확 시간이 되지 않았음
+	}
+
+	int spice_int = spice->repr - '0'; // 스파이스 값을 정수로 변환
 	int harvest_amount = 3; // 하베스터가 한 번에 수확하는 양
 
 	// 수확 가능한 양만큼 감소
 	int collected = (spice_int >= harvest_amount) ? harvest_amount : spice_int;
-	resource.spice += collected; // 자원 수집
 	spice_int -= collected; // 스파이스 값 감소
+	char mes[100] = { 0 };
+	sprintf_s(mes, sizeof(mes), "스파이스 매장지에서 자원을 %d개 캤습니다.", collected);
+	p_system_message(mes);
 
 	// 스파이스 값이 0이면 제거, 아니면 갱신
-	if (spice_int == 0) {
-		map[0][havs[index].pos.row][havs[index].pos.column] = ' '; // 스파이스 제거
+	if (spice_int <= 0) {
+		spice->repr = ' '; // 스파이스 제거
+		map[0][spice->pos1.row][spice->pos1.column] = ' '; // 맵에서 제거
+		map[1][hav->pos.row][hav->pos.column] = hav->repr; // 새 위치 표시
+		char* mes = "스파이스 매장지가 사라집니다.";
+		p_system_message(mes);
 	}
 	else {
-		map[0][havs[index].pos.row][havs[index].pos.column] = spice_int + '0'; // 남은 스파이스 출력
+		spice->repr = spice_int + '0'; // 남은 스파이스 출력
+		map[0][spice->pos1.row][spice->pos1.column] = spice->repr;
+		char mes_buf[100] = { 0 };
+		sprintf_s(mes_buf, sizeof(mes_buf), "스파이스 매장지에 스파이스가 %c개 남았습니다.", spice->repr);
+		p_system_message(mes_buf);
 	}
+
+	hav->gather_time = sys_clock + hav->gather_next_time; // 다음 수확 시간 설정
+	return collected; // 수확한 자원 반환
 }
+
+// [ 하베스터 움직임 메인 함수 ]
+void harvest_move_all(OBJECT_SAMPLE havs[MAX_HAV], int hav_count, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], OBJECT_BUILDING* SPICE) {
+	// [ 모든 하베스터의 다음 위치 계산 ]
+	handle_harvester_input(cursor, havs, hav_count, SPICE);
+
+	if (sys_clock <= f_hav_obj.next_move_time) {
+		return; // 이동 주기가 되지 않았음
+	}
+
+	for (int i = 0; i < hav_count; i++) {
+		// [ 하베스터 목적지에 도달한 경우 ]
+		if (havs[i].pos.row == havs[i].dest.row && havs[i].pos.column == havs[i].dest.column) {
+			if (hav_gather_spice[i] == 0) { // 스파이스 수확
+				for (int j = 0; j < spi_count; j++) {
+					if (SPICE[j].pos1.row == havs[i].pos.row && SPICE[j].pos1.column == havs[i].pos.column) {
+						// 다른 하베스터가 작업 중인지 확인
+						if (spice_in_progress[j] == -1) {
+							spice_in_progress[j] = i; // 현재 하베스터 작업 시작
+							int spice = harvest_gather_spice(&SPICE[j], &havs[i], map);
+							*spice_plus = spice;
+							hav_gather_spice[i] = 1; // 상태 변경
+							havs[i].dest = (POSITION){ 14, 1 }; // 본진으로 이동
+						}
+						else {
+							// 작업 중인 하베스터가 있으면 대기 메시지 출력
+							char mes[100] = { 0 };
+							sprintf_s(mes, sizeof(mes), "하베스터 %d가 작업 중입니다. 대기 중...", spice_in_progress[j]);
+							p_system_message(mes);
+						}
+						break;
+					}
+				}
+			}
+			else if (hav_gather_spice[i] == 1) { // 본진으로 자원 전달
+				resource.spice += *spice_plus;
+				char mes[100] = { 0 };
+				sprintf_s(mes, sizeof(mes), "스파이스 자원이 %d로 증가하였습니다.", resource.spice);
+				p_system_message(mes);
+
+				// 작업 상태 초기화
+				for (int j = 0; j < spi_count; j++) {
+					if (SPICE[j].pos1.row == pre_hav_dest[i].row && SPICE[j].pos1.column == pre_hav_dest[i].column) {
+						spice_in_progress[j] = -1; // 작업 해제
+						break;
+					}
+				}
+
+				// 원래 스파이스 위치로 복귀
+				if (map[0][pre_hav_dest[i].row][pre_hav_dest[i].column] != ' ') {
+					havs[i].dest = pre_hav_dest[i];
+				}
+
+				hav_gather_spice[i] = 0; // 상태 초기화
+			}
+			continue;
+		}
+
+		// [ 하베스터 이동 ]
+		if (map[0][havs[i].pos.row][havs[i].pos.column] >= '1' && map[0][havs[i].pos.row][havs[i].pos.column] <= '9') {
+
+		}
+		else {
+			map[1][havs[i].pos.row][havs[i].pos.column] = ' '; // 이전 위치 제거
+		}
+
+		check_friend[havs[i].pos.row][havs[i].pos.column] = 0;
+
+		POSITION next_pos = harvest_next_move(&havs[i], havs[i].dest);
+		havs[i].pos = next_pos;
+		check_friend[havs[i].pos.row][havs[i].pos.column] = 1;
+
+		if (map[0][havs[i].pos.row][havs[i].pos.column] >= '1' && map[0][havs[i].pos.row][havs[i].pos.column] <= '9') {
+
+		}
+		else {
+			map[1][havs[i].pos.row][havs[i].pos.column] = havs[i].repr; // 새 위치 표시
+		}
+	}
+	f_hav_obj.next_move_time = sys_clock + f_hav_obj.move_period; // 이동 주기 설정
+}
+

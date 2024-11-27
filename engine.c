@@ -97,6 +97,7 @@ bool space_key_press = false; // 스페이스바가 눌렸는지 확인 / false = 비활성화, 
 bool hav_move = false;
 bool h_key_press = false;
 bool space_and_h_key = false;
+bool space_and_m_key = false;
 
 bool m_key_press = false; // 이동 확인
 bool p_p_key_press = false; // 순찰 확인
@@ -355,6 +356,9 @@ int main(void) {
 				b_key_press = false;
 				break;
 
+			case k_m:
+				p_system_message("M키를 눌렀습니다.");
+				m_key_press = true;
 
 
 			case k_none:
@@ -671,6 +675,7 @@ void d_eagle_move(void) {
 	d_eagle.next_move_time = sys_clock + d_eagle.move_period;
 }
 
+
 // [ 샌드웜 (1) ]
 POSITION sw1_next_pos(void) {
 	// [ 현재 위치와 목적지를 비교해서 이동 방향 결정 ]
@@ -852,6 +857,7 @@ void sw1_move(void) {
 	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr;
 	sw1_obj.next_move_time = sys_clock + sw1_obj.move_period;
 }
+
 
 // [ 샌드웜 (2) ]
 POSITION sw2_next_pos(void) {
@@ -1036,6 +1042,7 @@ void sw2_move(void) {
 	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = sw2_obj.repr;
 	sw2_obj.next_move_time = sys_clock + sw2_obj.move_period;
 }
+
 
 // [ 모래 폭풍 (X) ]
 POSITION sand_wind_next_pos(void) {
@@ -1294,7 +1301,6 @@ void sand_wind_move(void) {
 }
 
 
-
 // [ 하베스터 선택 및 스파이스 선택 ]
 void handle_harvester_input(CURSOR cursor, OBJECT_SAMPLE havs[MAX_HAV], int hav_count, OBJECT_BUILDING* SPICE) {
 	POSITION curr = cursor.current;
@@ -1307,6 +1313,7 @@ void handle_harvester_input(CURSOR cursor, OBJECT_SAMPLE havs[MAX_HAV], int hav_
 				p_system_message("하베스터 선택 완료.");
 				space_key_press = false;
 				space_and_h_key = true;
+				space_and_m_key = true;
 				break;
 			}
 		}
@@ -1320,10 +1327,30 @@ void handle_harvester_input(CURSOR cursor, OBJECT_SAMPLE havs[MAX_HAV], int hav_
 			selected_harvester = -1;
 			h_key_press = false; // 처리 완료
 			space_and_h_key = false;
+			space_and_m_key = false;
 		}
 		else {
 			h_key_press = false;
 			p_system_message("스파이스가 선택되지 않았습니다. 다시 h키를 눌러주세요");
+		}
+	}
+
+	// [ M키로 이동 목적지 설정 ]
+	if (space_and_m_key && m_key_press && selected_harvester != -1) {
+		// 빈 공간(사막)으로만 이동 가능
+		if (map[0][curr.row][curr.column] == ' ') {
+			havs[selected_harvester].dest.row = curr.row;
+			havs[selected_harvester].dest.column = curr.column;
+			hav_gather_spice[selected_harvester] = -1; // 이동 상태 표시
+			p_system_message("커서 위치를 목적지로 설정.");
+			selected_harvester = -1;
+			m_key_press = false;
+			space_and_h_key = false;
+			space_and_m_key = false;
+		}
+		else {
+			m_key_press = false;
+			p_system_message("하베스터는 사막지형에서만을 목적지로 설정할 수 있습니다.");
 		}
 	}
 }
@@ -1492,12 +1519,16 @@ void harvest_move_all(OBJECT_SAMPLE havs[MAX_HAV], int hav_count, char map[N_LAY
 
 				hav_gather_spice[i] = 0; // 상태 초기화
 			}
+			else if (hav_gather_spice[i] == -1) { // 단순 이동 완료
+				hav_gather_spice[i] = 0; // 상태 초기화
+				p_system_message("하베스터 이동 완료.");
+			}
 			continue;
 		}
 
 		// [ 하베스터 이동 ]
 		if (map[0][havs[i].pos.row][havs[i].pos.column] >= '1' && map[0][havs[i].pos.row][havs[i].pos.column] <= '9') {
-
+			// 스파이스 위치는 그대로 유지
 		}
 		else {
 			map[1][havs[i].pos.row][havs[i].pos.column] = ' '; // 이전 위치 제거
@@ -1510,7 +1541,7 @@ void harvest_move_all(OBJECT_SAMPLE havs[MAX_HAV], int hav_count, char map[N_LAY
 		check_friend[havs[i].pos.row][havs[i].pos.column] = 1;
 
 		if (map[0][havs[i].pos.row][havs[i].pos.column] >= '1' && map[0][havs[i].pos.row][havs[i].pos.column] <= '9') {
-
+			// 스파이스 위치는 그대로 유지
 		}
 		else {
 			map[1][havs[i].pos.row][havs[i].pos.column] = havs[i].repr; // 새 위치 표시

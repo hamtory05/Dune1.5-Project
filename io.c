@@ -85,6 +85,10 @@ KEY get_key(void) {
 	case 115:
 		return k_s;
 
+	case 77:
+		return k_m;
+	case 109:
+		return k_m;
 
 	// [ 방향키 입력됐을 때의 행동 ]
 	case 224:

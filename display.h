@@ -54,6 +54,7 @@ void press_s(void);
 
 void press_s_s(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
 
+void press_m(CURSOR cursor, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int hav_count, OBJECT_SAMPLE* havs[MAX_HAV], int check_friend[MAP_HEIGHT][MAP_WIDTH]);
 
 // [ 시스템 메시지 ]
 void p_system_message(char* new_message);

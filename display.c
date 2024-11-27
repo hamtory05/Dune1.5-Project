@@ -90,6 +90,10 @@ int shle_sold_check[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 은신처 - 1, 보병 - 2 구분
 int frem_fight_fact_check[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 공장 - 1, 프레멘 - 2, 투사 - 3 구분
 
 bool return_cursor = false;
+extern bool space_and_m_key;
+extern bool m_key_press;
+extern bool space_and_h_key;
+extern int selected_harvester; // 선택된 하베스터 인덱스 (-1: 선택 안됨)
 
 
 // =================================== [ 건물 ] ======================================= //
@@ -698,6 +702,7 @@ void clear_sysmes_frame() {
 	}
 }
 
+// [ 시스템 메시지 메인 출력 함수 ]
 void p_system_message(char* new_message) {
 	// 배열의 마지막 메시지 해제 (동적 할당된 경우)
 	if (save_system_message[6] != NULL) {
@@ -1343,11 +1348,6 @@ void press_s_s(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][
 
 // [ F (프레멘 생산) 키를 눌렀을 때 ]
 void press_f() {
-
-}
-
-// [ M (이동) 키를 눌렀을 때 ]
-void press_m() {
 
 }
 

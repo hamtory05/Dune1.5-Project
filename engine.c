@@ -51,7 +51,7 @@ char* send_system_message[1];
 // [ KEY RESET ]
 void reset_key_false();
 
-// [ 하베스터 ]
+// [ 하베스터 & 스파이스 관련 ]
 OBJECT_SAMPLE* havs[MAX_HAV]; 
 int hav_count = 1; 
 int selected_harvester = -1; // 선택된 하베스터 인덱스 (-1: 선택 안됨)
@@ -64,8 +64,16 @@ POSITION harvest_set_dest(POSITION curr, OBJECT_SAMPLE* hav, OBJECT_BUILDING* SP
 void handle_harvester_input(CURSOR cursor, OBJECT_SAMPLE havs[MAX_HAV], int hav_count, OBJECT_BUILDING* SPICE);
 
 int spice_in_progress[MAX_SPICE] = { -1 }; // 각 스파이스 매장지에 대한 작업 상태 (-1: 작업 없음)
+
 extern OBJECT_BUILDING* SPICE;
 extern spi_count;
+
+// [ 보병 ]
+OBJECT_SAMPLE* sold[MAX_SOLD];
+int sold_count = 0;
+int selected_sold = -1;
+
+extern int base_barr_check[MAP_HEIGHT][MAP_WIDTH];
 
 /* ================= control =================== */
 int sys_clock = 0;		// system-wide clock(ms)
@@ -283,10 +291,10 @@ int main(void) {
 
 				// [ 병영 ]
 				if (map[0][cursor.current.row][cursor.current.column] == 'P') {
-					if (b_key_press) {
+					if (b_key_press) { // b키를 눌렀을 때
 						press_b_b();
-						b_b_key_press = true;
-						b_key_press = false;
+						b_b_key_press = true; // 병영 설치 활성화 
+						b_key_press = false;  // b키 비활성화
 					}
 				}
 
@@ -342,7 +350,7 @@ int main(void) {
 			// [ S ]
 			case k_s: 
 				// [ 시스템 메시지 추가 ]
-				p_system_message("S를 눌렀습니다.");
+				p_system_message("S키를 눌렀습니다.");
 
 				// [ 은신처 ]
 				if (map[0][cursor.current.row][cursor.current.column] == 'P') {
@@ -353,6 +361,11 @@ int main(void) {
 					}
 				}
 
+				// [ 보병 ]
+				press_s_s(cursor, &resource, map, &space_key_press);
+				
+				
+				space_key_press = false;
 				b_key_press = false;
 				break;
 

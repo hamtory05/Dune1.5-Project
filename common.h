@@ -125,6 +125,7 @@ typedef struct {
 	int hp;				// 체력
 	int dps;			// 공격력
 	int attack_period;	// 공격 주기
+	int next_attack_time; // 다음 공격할 시간
 	int eyes;			// 시야
 	int gather_time;    // 하베스터 수확 시간
 	int gather_next_time; // 하베스터 다음 수확 시간 추가

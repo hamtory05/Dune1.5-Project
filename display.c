@@ -90,11 +90,11 @@ int shle_sold_check[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 은신처 - 1, 보병 - 2 구분
 int frem_fight_fact_check[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 공장 - 1, 프레멘 - 2, 투사 - 3 구분
 
 bool return_cursor = false;
-extern bool space_and_m_key;
-extern bool m_key_press;
-extern bool space_and_h_key;
-extern int selected_harvester; // 선택된 하베스터 인덱스 (-1: 선택 안됨)
 
+// [ 보병 불러오기 ]
+extern OBJECT_SAMPLE* sold[MAX_SOLD];
+extern int sold_count;
+extern int selected_sold;
 
 // =================================== [ 건물 ] ======================================= //
 
@@ -784,7 +784,6 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 			order_message[0] = "보병 생산(S / ESC)";
 			prints(padd(order_mes_pos[0], pos_order), order_message[0]);
 		}
-		*space_key_press = false;
 		break;
 
 	// [ 장판 ] 
@@ -842,7 +841,6 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 			order_message[0] = "M : 이동, P : 순찰";
 			prints(padd(order_mes_pos[0], pos_order), order_message[0]);
 		}
-		*space_key_press = false;
 		break;
 
 	// [ 투기장 ]
@@ -965,45 +963,64 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	// [ 스페이스바로 숙소 설치 ]
 	if (d_key_press && resource->spice >= 2) {
 		int input_curr[4][2] = { 0 };
-		// [ 커서 자리 P ]
-		map[0][curr.row][curr.column] = 'D';
-		check_friend[curr.row][curr.column] = 1;
-		input_curr[0][0] = curr.row;
-		input_curr[0][1] = curr.column;
+		bool found_top_left = false;
 
-		int idx = 1;
-		// [ 커서 주변 자리 P ]
-		for (int i = 0; i < 8; ++i) {  // 8방향 검사
+		// [ 8방향 검사: 'P'로 된 2x2 영역의 왼쪽 위 모서리 좌표 찾기 ]
+		for (int i = 0; i < 8; ++i) {
 			int newRow = curr.row + pRow[i];
 			int newCol = curr.column + pCol[i];
+
 			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
-				map[0][newRow][newCol] = 'D';
-				input_curr[idx][0] = newRow;
-				input_curr[idx][1] = newCol;
-				idx++;
+				input_curr[0][0] = newRow;
+				input_curr[0][1] = newCol;
+				found_top_left = true;
+				break;
 			}
 		}
 
-		OBJECT_BUILDING new_dor = {
-			{ input_curr[0][0], input_curr[0][1] },
-			{ input_curr[1][0], input_curr[1][1] },
-			{ input_curr[2][0], input_curr[2][1] },
-			{ input_curr[3][0], input_curr[3][1] },
-			'D', 0, 10
+		// [ 2x2 영역 설정 ]
+		if (found_top_left) {
+			// 상대적 위치로 2x2 영역 좌표 설정
+			input_curr[1][0] = input_curr[0][0];     // 위쪽 오른쪽
+			input_curr[1][1] = input_curr[0][1] + 1;
+			input_curr[2][0] = input_curr[0][0] + 1; // 아래쪽 왼쪽
+			input_curr[2][1] = input_curr[0][1];
+			input_curr[3][0] = input_curr[0][0] + 1; // 아래쪽 오른쪽
+			input_curr[3][1] = input_curr[0][1] + 1;
 
-		};
-
-		// 배열에 숙소 추가
-		DOR[dor_count++] = &new_dor;
-
-		// [ 맵에 숙소 위치 반영 ]
-		for (int i = 0; i < 4; ++i) {
-			map[1][input_curr[i][0]][input_curr[i][1]] = new_dor.repr;
+			// 한 번에 모든 좌표 처리
+			for (int j = 0; j < 4; j++) {
+				map[0][input_curr[j][0]][input_curr[j][1]] = 'D';
+			}
 		}
 
-		// [ 생산 자원 소모 ]
-		resource->spice -= 2;
-		p_system_message("숙소를 건설하였습니다.");
+		if (dor_count < MAX_DOR) {
+			OBJECT_BUILDING* new_dor = (OBJECT_BUILDING*)malloc(sizeof(OBJECT_BUILDING));
+			if (!new_dor) {
+				p_system_message("메모리 할당 실패");
+				return;
+			}
+
+			// [ 새로운 숙소 ]
+			*new_dor = (OBJECT_BUILDING){
+				{ input_curr[0][0], input_curr[0][1] },
+				{ input_curr[1][0], input_curr[1][1] },
+				{ input_curr[2][0], input_curr[2][1] },
+				{ input_curr[3][0], input_curr[3][1] },
+				'D', 0, 10
+			};
+
+			// [ 배열에 추가 ]
+			DOR[dor_count] = new_dor;
+			dor_count++;
+
+			// [ 생산 자원 소모 ]
+			resource->spice -= 2;
+			p_system_message("숙소를 건설하였습니다.");
+		}
+		else {
+			p_system_message("숙소를 더이상 건설할 수 없습니다.");
+		}
 
 		// [ 초기화 ]
 		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
@@ -1020,47 +1037,62 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	if (g_key_press && resource->spice >= 4) {
 		// [ 커서 자리 P ]
 		int input_curr[4][2] = { 0 };
+		bool found_top_left = false;
 
-		map[0][curr.row][curr.column] = 'G';
-		check_friend[curr.row][curr.column] = 1;
-
-		input_curr[0][0] = curr.row;
-		input_curr[0][1] = curr.column;
-
-		int idx = 1;
-
-		// [ 커서 주변 자리 P ]
-		for (int i = 0; i < 8; ++i) {  // 8방향 검사
+		// [ 8방향 검사: 'P'로 된 2x2 영역의 왼쪽 위 모서리 좌표 찾기 ]
+		for (int i = 0; i < 8; ++i) {
 			int newRow = curr.row + pRow[i];
 			int newCol = curr.column + pCol[i];
+
 			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
-				map[0][newRow][newCol] = 'G';
-				input_curr[idx][0] = newRow;
-				input_curr[idx][1] = newCol;
-				idx++;
+				input_curr[0][0] = newRow;
+				input_curr[0][1] = newCol;
+				found_top_left = true;
+				break;
 			}
 		}
 
-		OBJECT_BUILDING new_gar = {
-			{ input_curr[0][0], input_curr[0][1] },
-			{ input_curr[1][0], input_curr[1][1] },
-			{ input_curr[2][0], input_curr[2][1] },
-			{ input_curr[3][0], input_curr[3][1] },
-			'G', 0, 10
-		};
+		// [ 2x2 영역 설정 ]
+		if (found_top_left) {
+			// 상대적 위치로 2x2 영역 좌표 설정
+			input_curr[1][0] = input_curr[0][0];     // 위쪽 오른쪽
+			input_curr[1][1] = input_curr[0][1] + 1;
+			input_curr[2][0] = input_curr[0][0] + 1; // 아래쪽 왼쪽
+			input_curr[2][1] = input_curr[0][1];
+			input_curr[3][0] = input_curr[0][0] + 1; // 아래쪽 오른쪽
+			input_curr[3][1] = input_curr[0][1] + 1;
 
-		// 배열에 창고 추가
-		GAR[gar_count++] = &new_gar;
+			// 한 번에 모든 좌표 처리
+			for (int j = 0; j < 4; j++) {
+				map[0][input_curr[j][0]][input_curr[j][1]] = 'G';
+			}
 
-		// [ 맵에 창고 위치 반영 ]
-		for (int i = 0; i < 4; ++i) {
-			map[1][input_curr[i][0]][input_curr[i][1]] = new_gar.repr;
+			if (gar_count < MAX_GAR) {
+				OBJECT_BUILDING* new_gar = (OBJECT_BUILDING*)malloc(sizeof(OBJECT_BUILDING));
+				if (!new_gar) {
+					p_system_message("메모리 할당 실패");
+					return;
+				}
+
+				*new_gar = (OBJECT_BUILDING){
+					{ input_curr[0][0], input_curr[0][1] },
+					{ input_curr[1][0], input_curr[1][1] },
+					{ input_curr[2][0], input_curr[2][1] },
+					{ input_curr[3][0], input_curr[3][1] },
+					'G', 0, 10
+				};
+
+				GAR[gar_count] = new_gar;
+				gar_count++;
+				
+				// [ 생산 자원 소모 ]
+				resource->spice -= 2;
+				p_system_message("숙소를 건설하였습니다.");
+			}
+			else {
+				p_system_message("숙소를 더이상 건설할 수 없습니다.");
+			}
 		}
-
-
-		// [ 생산 자원 소모 ]
-		resource->spice -= 2;
-		p_system_message("숙소를 건설하였습니다.");
 
 		// [ 초기화 ]
 		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
@@ -1076,50 +1108,75 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	// [ 스페이스바로 병영 설치 ]
 	if (b_b_key_press && resource->spice >= 4) {
 		int input_curr[4][2] = { 0 };
+		bool found_top_left = false;
 
-		map[0][curr.row][curr.column] = 'B';
-		check_friend[curr.row][curr.column] = 1;
-		base_barr_check[curr.row][curr.column] = 2;
-
-		input_curr[0][0] = curr.row;
-		input_curr[0][1] = curr.column;
-
-		int idx = 1;
-
-		// [ 커서 주변 자리 P ]
-		for (int i = 0; i < 8; ++i) {  // 8방향 검사
+		// [ 8방향 검사: 'P'로 된 2x2 영역의 왼쪽 위 모서리 좌표 찾기 ]
+		for (int i = 0; i < 8; ++i) {
 			int newRow = curr.row + pRow[i];
 			int newCol = curr.column + pCol[i];
+
 			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
-				map[0][newRow][newCol] = 'B';
-				base_barr_check[newRow][newCol] = 2;
-				input_curr[idx][0] = newRow;
-				input_curr[idx][1] = newCol;
-				idx++;
+				input_curr[0][0] = newRow;
+				input_curr[0][1] = newCol;
+				found_top_left = true;
+				break;
 			}
 		}
 
-		OBJECT_BUILDING new_bar = {
-			{ input_curr[0][0], input_curr[0][1] },
-			{ input_curr[1][0], input_curr[1][1] },
-			{ input_curr[2][0], input_curr[2][1] },
-			{ input_curr[3][0], input_curr[3][1] },
-			'B', 0, 10
-		};
+		// [ 2x2 영역 설정 ]
+		if (found_top_left) {
+			// 상대적 위치로 2x2 영역 좌표 설정
+			input_curr[1][0] = input_curr[0][0];     // 위쪽 오른쪽
+			input_curr[1][1] = input_curr[0][1] + 1;
+			input_curr[2][0] = input_curr[0][0] + 1; // 아래쪽 왼쪽
+			input_curr[2][1] = input_curr[0][1];
+			input_curr[3][0] = input_curr[0][0] + 1; // 아래쪽 오른쪽
+			input_curr[3][1] = input_curr[0][1] + 1;
 
-		// 배열에 병영 추가
-		BAR[bar_count++] = &new_bar;
-
-		// [ 맵에 병영 위치 반영 ]
-		for (int i = 0; i < 4; ++i) {
-			map[1][input_curr[i][0]][input_curr[i][1]] = new_bar.repr;
+			// 한 번에 모든 좌표 처리
+			for (int j = 0; j < 4; j++) {
+				map[0][input_curr[j][0]][input_curr[j][1]] = 'B';
+				base_barr_check[input_curr[j][0]][input_curr[j][1]] = 2;
+			}
 		}
 
+		// 동적 메모리 할당
+		if (bar_count < MAX_BAR) {
+			OBJECT_BUILDING* new_bar = (OBJECT_BUILDING*)malloc(sizeof(OBJECT_BUILDING));
+			if (!new_bar) {
+				p_system_message("메모리 할당 실패");
+				return;
+			}
+			// [ 새로운 병영 ]
+			*new_bar = (OBJECT_BUILDING){
+				.pos1 = { input_curr[0][0], input_curr[0][1] },
+				.pos2 = { input_curr[1][0], input_curr[1][1] },
+				.pos3 = { input_curr[2][0], input_curr[2][1] },
+				.pos4 = { input_curr[3][0], input_curr[3][1] },
+				.repr = 'B',
+				.layer = 0,
+				.hp = 20
+			};
 
-		// [ 생산 자원 소모 ]
-		resource->spice -= 4;
-		p_system_message("병영을 건설하였습니다.");
+			// [ 배열에 추가 ]
+			BAR[bar_count] = new_bar;
 
+			/*char mes[100];
+			sprintf_s(mes, sizeof(mes), "pos1 -> %d %d, pos2 -> %d %d", BAR[0]->pos1.row, BAR[0]->pos1.column,
+				BAR[0]->pos2.row, BAR[0]->pos2.column);
+			p_system_message(mes);*/
+
+			bar_count++;
+
+
+
+			// [ 생산 자원 소모 ]
+			resource->spice -= 4;
+			p_system_message("병영을 건설하였습니다.");
+		}
+		else {
+			p_system_message("병영을 더 이상 지을 수 없습니다.");
+		}
 		// [ 초기화 ]
 		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
 	}
@@ -1134,48 +1191,71 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	// [ 스페이스바로 은신처 설치 ]
 	if (s_key_press && resource->spice >= 5) {
 		int input_curr[4][2] = { 0 };
+		bool found_top_left = false;
 
-		map[0][curr.row][curr.column] = 'S';
-		check_friend[curr.row][curr.column] = 1;
-		shle_sold_check[curr.row][curr.column] = 1; // 은신처 - 1, 보병 - 2
-
-		input_curr[0][0] = curr.row;
-		input_curr[0][1] = curr.column;
-
-		int idx = 1;
-
-		// [ 커서 주변 자리 P ]
-		for (int i = 0; i < 8; ++i) {  // 8방향 검사
+		// [ 8방향 검사: 'P'로 된 2x2 영역의 왼쪽 위 모서리 좌표 찾기 ]
+		for (int i = 0; i < 8; ++i) {
 			int newRow = curr.row + pRow[i];
 			int newCol = curr.column + pCol[i];
+
 			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
-				map[0][newRow][newCol] = 'S';
-				shle_sold_check[newRow][newCol] = 1;
-				input_curr[idx][0] = newRow;
-				input_curr[idx][1] = newCol;
-				idx++;
+				input_curr[0][0] = newRow;
+				input_curr[0][1] = newCol;
+				found_top_left = true;
+				break;
 			}
 		}
 
-		OBJECT_BUILDING new_she = {
-			{ input_curr[0][0], input_curr[0][1] },
-			{ input_curr[1][0], input_curr[1][1] },
-			{ input_curr[2][0], input_curr[2][1] },
-			{ input_curr[3][0], input_curr[3][1] },
-			'D', 0, 10
-		};
+		// [ 2x2 영역 설정 ]
+		if (found_top_left) {
+			// 상대적 위치로 2x2 영역 좌표 설정
+			input_curr[1][0] = input_curr[0][0];     // 위쪽 오른쪽
+			input_curr[1][1] = input_curr[0][1] + 1;
+			input_curr[2][0] = input_curr[0][0] + 1; // 아래쪽 왼쪽
+			input_curr[2][1] = input_curr[0][1];
+			input_curr[3][0] = input_curr[0][0] + 1; // 아래쪽 오른쪽
+			input_curr[3][1] = input_curr[0][1] + 1;
 
-		// 배열에 은신처 추가
-		SHE[she_count++] = &new_she; 
-
-		// [ 맵에 은신처 위치 반영 ]
-		for (int i = 0; i < 4; ++i) {
-			map[1][input_curr[i][0]][input_curr[i][1]] = new_she.repr;
+			// 한 번에 모든 좌표 처리
+			for (int j = 0; j < 4; j++) {
+				map[0][input_curr[j][0]][input_curr[j][1]] = 'S';
+				shle_sold_check[input_curr[j][0]][input_curr[j][1]] = 1;
+			}
 		}
 
-		// [ 생산 자원 소모 ]
-		resource->spice -= 5;
-		p_system_message("은신처를 건설하였습니다.");
+
+		// 
+		if (she_count < MAX_BAR) {
+			OBJECT_BUILDING* new_she = (OBJECT_BUILDING*)malloc(sizeof(OBJECT_BUILDING));
+			
+			// [ 예외처리 ]
+			if (!new_she) {
+				p_system_message("메모리 할당 실패");
+				return;
+			}
+
+			// [ 새로운 은신처 ]
+			*new_she = (OBJECT_BUILDING){
+				{ input_curr[0][0], input_curr[0][1] },
+				{ input_curr[1][0], input_curr[1][1] },
+				{ input_curr[2][0], input_curr[2][1] },
+				{ input_curr[3][0], input_curr[3][1] },
+				'S', 0, 10
+			};
+
+			// [ 배열에 은신처 추가 ]
+			SHE[she_count] = new_she;
+
+			// [ 카운트 증가 ]
+			she_count++;
+
+			// [ 생산 자원 소모 ]
+			resource->spice -= 5;
+			p_system_message("은신처를 건설하였습니다.");
+		}
+		else {
+			p_system_message("은신처를 더이상 지을 수 없습니다.");
+		}
 
 		// [ 초기화 ]
 		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
@@ -1210,21 +1290,28 @@ void press_h(RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int c
 
 			// [ 하베스터를 추가할 수 있을 때만 생성 ]
 			if (hav_count < MAX_HAV) {
-				OBJECT_SAMPLE new_hav = { 
-					{ 14, 2 }, { 14, 2 }, 'H', 2000, 2000, 
+				OBJECT_SAMPLE* new_hav = (OBJECT_SAMPLE*)malloc(sizeof(OBJECT_SAMPLE));
+				if (!new_hav) {
+					p_system_message("메모리 할당 실패");
+					return;
+				}
+
+				// [ 새로운 하베스터 ]
+				*new_hav = (OBJECT_SAMPLE){
+					{ 14, 2 }, { 14, 2 }, 'H', 2000, 2000,
 					COLOR_DEFAULT + 16, 70, 0, 0, 0, 4000, 4000
 				};
 
 				// [ 하베스터를 배열에 추가 ]
-				havs[0] = f_hav_obj;
-				havs[hav_count++] = &new_hav;
+				havs[hav_count] = new_hav;
 
 				// [ 맵에 하베스터 위치 반영 ]
-				map[1][new_hav.pos.row][new_hav.pos.column] = 'H';
-				check_friend[new_hav.pos.row][new_hav.pos.column] = 1;
+				map[1][havs[hav_count]->pos.row][havs[hav_count]->pos.column] = 'H';
+				check_friend[havs[hav_count]->pos.row][havs[hav_count]->pos.column] = 1;
 
 				// [ 시스템 메시지 추가 ]
 				p_system_message("하베스터가가 생산되었습니다.");
+				hav_count++;
 
 				// [ 자원 감소, 인구수 증가 ]
 				resource->spice -= 5;
@@ -1332,17 +1419,76 @@ void press_s(void) {
 }
 
 // [ S (보병 생산) 키를 눌렀을 때 ]
-void press_s_s(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
+void press_s_s(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], bool* space_key_press) {
 	POSITION curr = cursor.current;
-	if (map[0][curr.row][curr.column] == 'B' && base_barr_check[curr.row][curr.column] == 2 && \
-		resource->spice >= 1 && resource->population + 1 <= resource->population_max) {
-		
-	}
-	else if (resource->spice < 1) {
-		p_system_message("생산 자원이 부족하여 하베스터를 생산할 수 없습니다.");
-	}
-	else if (resource->population + 1 > resource->population_max) {
-		p_system_message("인구수가 부족하여 하베스터를 생산할 수 없습니다.");
+
+	// [ 디버깅 ]
+	/*char mes[100];
+	sprintf_s(mes, sizeof(mes), "space_key_press: %d", *space_key_press);
+	p_system_message(mes);*/
+
+	if (*space_key_press) {
+		p_system_message("보병 생산 S키를 눌렀습니다.");
+		for (int i = 0; i < bar_count; i++) {
+			/*char mes[100];
+			sprintf_s(mes, sizeof(mes), "pos1 -> %d %d", BAR[0]->pos1.row, BAR[0]->pos1.column);
+			p_system_message(mes); */
+
+			if (base_barr_check[curr.row][curr.column] == 2 && \
+				((curr.row == BAR[i]->pos1.row && curr.column == BAR[i]->pos1.column) || \
+				(curr.row == BAR[i]->pos2.row && curr.column == BAR[i]->pos2.column) || \
+				(curr.row == BAR[i]->pos3.row && curr.column == BAR[i]->pos3.column) || \
+				(curr.row == BAR[i]->pos4.row && curr.column == BAR[i]->pos4.column))) {
+				if (resource->spice >= 1 && resource->population + 1 <= resource->population_max) {
+					// [ 자원 감소 & 인구수 증가 ]
+					resource->spice -= 1;
+					resource->population += 1;
+
+					// [ 보병 생성 ]
+					OBJECT_SAMPLE* new_sold = (OBJECT_SAMPLE*)malloc(sizeof(OBJECT_SAMPLE));
+					if (!new_sold) {
+						p_system_message("메모리 할당 실패");
+						return;
+					}
+
+					// [ 새로운 보병 생성 ]
+					*new_sold = (OBJECT_SAMPLE){
+						.pos = { BAR[i]->pos1.row - 1, BAR[i]->pos1.column },
+						.dest = { BAR[i]->pos1.row - 1, BAR[i]->pos1.column },
+						.repr = 'S',
+						.move_period = 2000,
+						.next_move_time = 2000,
+						.dps = 5,
+						.hp = 15,
+						.eyes = 1,
+						.attack_period = 800,
+						.next_attack_time = 800
+					};
+
+					// 배열에 보병 넣기
+					sold[sold_count] = new_sold;
+
+					// 보병 위치에 생성
+					shle_sold_check[new_sold->pos.row][new_sold->pos.column] = 2;  // 역참조
+
+					// 보병 위치 맵에 반영
+					map[1][new_sold->pos.row][new_sold->pos.column] = new_sold->repr;
+					sold_count++;
+
+					// [ 시스템 메시지 ]
+					p_system_message("보병을 생산하였습니다.");
+					break;
+				}
+				else if (resource->spice < 1) {
+					p_system_message("생산 자원이 부족하여 보병을 생산할 수 없습니다.");
+					break;
+				}
+				else if (resource->population + 1 > resource->population_max) {
+					p_system_message("인구수가 부족하여 보병을 생산할 수 없습니다.");
+					break;
+				}
+			}
+		}
 	}
 }
 

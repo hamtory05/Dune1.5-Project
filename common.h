@@ -25,6 +25,7 @@
 
 #define MAX_HAV  50   // 하베스터 최대 50마리 까지 보관 가능
 #define MAX_SOLD 50   // 보병 최대 50마리 까지 보관 가능
+#define MAX_FREM 50   // 프레멘 최대 50마리 까지 보관 가능
 
 #define MAX_SPICE 100
 #define MAX_DOR  50

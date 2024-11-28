@@ -54,6 +54,8 @@ void press_s(void);
 
 void press_s_s(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], bool* space_key_press);
 
+void press_f(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], bool* space_key_press);
+
 // [ 시스템 메시지 ]
 void p_system_message(char* new_message);
 

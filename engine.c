@@ -75,6 +75,13 @@ int selected_sold = -1;
 
 extern int base_barr_check[MAP_HEIGHT][MAP_WIDTH];
 
+// [ ÇÁ·¹¸à ]
+OBJECT_SAMPLE* frem[MAX_FREM];
+int frem_count = 0;
+int selected_frem = -1;
+
+
+
 /* ================= control =================== */
 int sys_clock = 0;		// system-wide clock(ms)
 CURSOR cursor = { { 1, 1 }, {1, 1} };

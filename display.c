@@ -96,6 +96,12 @@ extern OBJECT_SAMPLE* sold[MAX_SOLD];
 extern int sold_count;
 extern int selected_sold;
 
+// [ 프레멘 불러오기 ]
+extern OBJECT_SAMPLE* frem[MAX_FREM];
+extern int frem_count;
+extern int selected_frem;
+
+
 // =================================== [ 건물 ] ======================================= //
 
 // ==== [ 구조체로 건물 선언 ] ==== //
@@ -1108,37 +1114,35 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	// [ 스페이스바로 병영 설치 ]
 	if (b_b_key_press && resource->spice >= 4) {
 		int input_curr[4][2] = { 0 };
-		bool found_top_left = false;
+		
+		// [ 커서 기준 왼쪽 위 모서리 계산 ]
+		int topLeftRow = curr.row - (curr.row % 2);  // 행: 짝수 행으로 보정
+		int topLeftCol = curr.column - (curr.column % 2);  // 열: 짝수 열로 보정
 
-		// [ 8방향 검사: 'P'로 된 2x2 영역의 왼쪽 위 모서리 좌표 찾기 ]
-		for (int i = 0; i < 8; ++i) {
-			int newRow = curr.row + pRow[i];
-			int newCol = curr.column + pCol[i];
+		// [ pos1 설정: 왼쪽 위 모서리 ]
+		input_curr[0][0] = topLeftRow;
+		input_curr[0][1] = topLeftCol;
 
-			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
-				input_curr[0][0] = newRow;
-				input_curr[0][1] = newCol;
-				found_top_left = true;
-				break;
-			}
-		}
+		// [ pos2, pos3, pos4 설정 ]
+		input_curr[1][0] = topLeftRow;        // 위쪽 오른쪽
+		input_curr[1][1] = topLeftCol + 1;
 
-		// [ 2x2 영역 설정 ]
-		if (found_top_left) {
-			// 상대적 위치로 2x2 영역 좌표 설정
-			input_curr[1][0] = input_curr[0][0];     // 위쪽 오른쪽
-			input_curr[1][1] = input_curr[0][1] + 1;
-			input_curr[2][0] = input_curr[0][0] + 1; // 아래쪽 왼쪽
-			input_curr[2][1] = input_curr[0][1];
-			input_curr[3][0] = input_curr[0][0] + 1; // 아래쪽 오른쪽
-			input_curr[3][1] = input_curr[0][1] + 1;
+		input_curr[2][0] = topLeftRow + 1;    // 아래쪽 왼쪽
+		input_curr[2][1] = topLeftCol;
 
-			// 한 번에 모든 좌표 처리
-			for (int j = 0; j < 4; j++) {
-				map[0][input_curr[j][0]][input_curr[j][1]] = 'B';
-				base_barr_check[input_curr[j][0]][input_curr[j][1]] = 2;
-			}
-		}
+		input_curr[3][0] = topLeftRow + 1;    // 아래쪽 오른쪽
+		input_curr[3][1] = topLeftCol + 1;
+
+		// [ 맵과 관련된 데이터 업데이트 ]
+		map[0][input_curr[0][0]][input_curr[0][1]] = 'B';
+		map[0][input_curr[1][0]][input_curr[1][1]] = 'B';
+		map[0][input_curr[2][0]][input_curr[2][1]] = 'B';
+		map[0][input_curr[3][0]][input_curr[3][1]] = 'B';
+
+		base_barr_check[input_curr[0][0]][input_curr[0][1]] = 2;
+		base_barr_check[input_curr[1][0]][input_curr[1][1]] = 2;
+		base_barr_check[input_curr[2][0]][input_curr[2][1]] = 2;
+		base_barr_check[input_curr[3][0]][input_curr[3][1]] = 2;
 
 		// 동적 메모리 할당
 		if (bar_count < MAX_BAR) {
@@ -1440,44 +1444,48 @@ void press_s_s(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][
 				(curr.row == BAR[i]->pos3.row && curr.column == BAR[i]->pos3.column) || \
 				(curr.row == BAR[i]->pos4.row && curr.column == BAR[i]->pos4.column))) {
 				if (resource->spice >= 1 && resource->population + 1 <= resource->population_max) {
-					// [ 자원 감소 & 인구수 증가 ]
-					resource->spice -= 1;
-					resource->population += 1;
-
 					// [ 보병 생성 ]
-					OBJECT_SAMPLE* new_sold = (OBJECT_SAMPLE*)malloc(sizeof(OBJECT_SAMPLE));
-					if (!new_sold) {
-						p_system_message("메모리 할당 실패");
-						return;
+					if (sold_count < MAX_SOLD) {
+						OBJECT_SAMPLE* new_sold = (OBJECT_SAMPLE*)malloc(sizeof(OBJECT_SAMPLE));
+						if (!new_sold) {
+							p_system_message("메모리 할당 실패");
+							return;
+						}
+						// [ 자원 감소 & 인구수 증가 ]
+						resource->spice -= 1;
+						resource->population += 1;
+
+						// [ 새로운 보병 생성 ]
+						*new_sold = (OBJECT_SAMPLE){
+							.pos = { BAR[i]->pos1.row - 1, BAR[i]->pos1.column },
+							.dest = { BAR[i]->pos1.row - 1, BAR[i]->pos1.column },
+							.repr = 'S',
+							.move_period = 2000,
+							.next_move_time = 2000,
+							.dps = 5,
+							.hp = 15,
+							.eyes = 1,
+							.attack_period = 800,
+							.next_attack_time = 800
+						};
+
+						// 배열에 보병 넣기
+						sold[sold_count] = new_sold;
+
+						// 보병 위치에 생성
+						shle_sold_check[new_sold->pos.row][new_sold->pos.column] = 2;  // 역참조
+
+						// 보병 위치 맵에 반영
+						map[1][new_sold->pos.row][new_sold->pos.column] = new_sold->repr;
+						sold_count++;
+
+						// [ 시스템 메시지 ]
+						p_system_message("보병을 생산하였습니다.");
+						break;
 					}
-
-					// [ 새로운 보병 생성 ]
-					*new_sold = (OBJECT_SAMPLE){
-						.pos = { BAR[i]->pos1.row - 1, BAR[i]->pos1.column },
-						.dest = { BAR[i]->pos1.row - 1, BAR[i]->pos1.column },
-						.repr = 'S',
-						.move_period = 2000,
-						.next_move_time = 2000,
-						.dps = 5,
-						.hp = 15,
-						.eyes = 1,
-						.attack_period = 800,
-						.next_attack_time = 800
-					};
-
-					// 배열에 보병 넣기
-					sold[sold_count] = new_sold;
-
-					// 보병 위치에 생성
-					shle_sold_check[new_sold->pos.row][new_sold->pos.column] = 2;  // 역참조
-
-					// 보병 위치 맵에 반영
-					map[1][new_sold->pos.row][new_sold->pos.column] = new_sold->repr;
-					sold_count++;
-
-					// [ 시스템 메시지 ]
-					p_system_message("보병을 생산하였습니다.");
-					break;
+					else {
+						p_system_message("보병을 더이상 생산할 수 없습니다.");
+					}
 				}
 				else if (resource->spice < 1) {
 					p_system_message("생산 자원이 부족하여 보병을 생산할 수 없습니다.");
@@ -1493,8 +1501,76 @@ void press_s_s(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][
 }
 
 // [ F (프레멘 생산) 키를 눌렀을 때 ]
-void press_f() {
+void press_f(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], bool* space_key_press) {
+	POSITION curr = cursor.current;
 
+	if (*space_key_press) {
+		for (int i = 0; i < she_count; i++) {
+			if (shle_sold_check[curr.row][curr.column] == 1 && \
+				((curr.row == SHE[i]->pos1.row && curr.column == SHE[i]->pos1.column) || \
+				(curr.row == SHE[i]->pos2.row && curr.column == SHE[i]->pos2.column) || \
+				(curr.row == SHE[i]->pos3.row && curr.column == SHE[i]->pos3.column) || \
+				(curr.row == SHE[i]->pos4.row && curr.column == SHE[i]->pos4.column))) {
+				if (resource->spice >= 5 && resource->population + 5 <= resource->population_max) {
+					if (frem_count < MAX_FREM) {
+
+						// [ 프레멘 생성 ]
+						OBJECT_SAMPLE* new_frem = (OBJECT_SAMPLE*)malloc(sizeof(OBJECT_SAMPLE));
+						if (!new_frem) {
+							p_system_message("메모리 할당 실패");
+							return;
+						}
+
+						// [ 자원 감소, 인구수 증가 ]
+						resource->spice -= 5;
+						resource->population += 5;
+
+						// [ 새로운 프레멘 생성 ]
+						*new_frem = (OBJECT_SAMPLE){
+							.pos = { SHE[i]->pos1.row - 1, SHE[i]->pos1.column },
+							.dest = { SHE[i]->pos1.row - 1, SHE[i]->pos1.column },
+							.repr = 'F',
+							.move_period = 400,
+							.next_move_time = 400,
+							.dps = 15,
+							.hp = 25,
+							.eyes = 8,
+							.attack_period = 200,
+							.next_attack_time = 200
+						};
+
+						// [ 배열에 프레멘 넣기 ]
+						frem[frem_count] = new_frem;
+
+						// [ 프레멘 위치에 생성 ]
+						frem_fight_fact_check[new_frem->pos.row][new_frem->pos.column] = 2;  // 2가 프레멘
+
+						// [ 프레멘 위치 맵에 반영 ]
+						map[1][new_frem->pos.row][new_frem->pos.column] = new_frem->repr;
+						frem_count++;
+
+						// [ 시스템 메시지 ]
+						p_system_message("프레멘을 생산하였습니다.");
+						break;
+					}
+					else {
+						p_system_message("프레멘을 더이상 생산할 수 없습니다.");
+					}
+				}
+				else if (resource->spice < 5) {
+					p_system_message("생산 자원이 부족하여 프레멘을 생산할 수 없습니다.");
+					break;
+				}
+				else if (resource->population + 5 > resource->population_max) {
+					p_system_message("인구수가 부족하여 프레멘을 생산할 수 없습니다.");
+					break;
+				}
+
+
+				
+			}
+		}	
+	}
 }
 
 // [ P (순찰) 키를 눌렀을 때 ]

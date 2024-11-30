@@ -56,7 +56,7 @@ typedef enum {
 	k_quit,
 	k_space,
 	k_esc,
-	k_h, k_b, k_p, k_d, k_g, k_s, k_m,
+	k_h, k_b, k_p, k_d, k_g, k_s, k_m, k_f,
 	k_undef, // 정의되지 않은 키 입력	
 } KEY;
 

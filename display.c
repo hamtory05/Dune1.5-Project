@@ -423,8 +423,20 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 
 				break;
 			
-			// [ 공장 ]
+			// [ 공장, 프레멘, 투사 ]
 			case 'F':
+				// [ 공장 - 1 ]
+				if (frem_fight_fact_check[i][j] == 1) {
+					color = 180; // 색 아직 미지정
+				}
+				// [ 프레멘 - 2 ]
+				else if (frem_fight_fact_check[i][j] == 2) {
+					color = 60; // 색 아직 미지정
+				}
+				// [ 투사 - 3 ]
+				else if (frem_fight_fact_check[i][j] == 3) {
+					color = 60; // 색 아직 미지정
+				}
 
 				break;
 
@@ -969,35 +981,46 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	// [ 스페이스바로 숙소 설치 ]
 	if (d_key_press && resource->spice >= 2) {
 		int input_curr[4][2] = { 0 };
-		bool found_top_left = false;
 
-		// [ 8방향 검사: 'P'로 된 2x2 영역의 왼쪽 위 모서리 좌표 찾기 ]
-		for (int i = 0; i < 8; ++i) {
-			int newRow = curr.row + pRow[i];
-			int newCol = curr.column + pCol[i];
+		// [ 초기값 설정 ]
+		int minRow = curr.row;
+		int minCol = curr.column;
 
-			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
-				input_curr[0][0] = newRow;
-				input_curr[0][1] = newCol;
-				found_top_left = true;
-				break;
+		// [ 현재 위치 포함 8방향 검사 배열 ]
+		int dRow[9] = { 0, -1, -1, -1, 0, 1, 1, 1, 0 }; // 현재 위치 포함 (8방향)
+		int dCol[9] = { 0, -1, 0, 1, 1, 1, 0, -1, -1 };
+
+		for (int i = 0; i < 9; ++i) {
+			int checkRow = curr.row + dRow[i];
+			int checkCol = curr.column + dCol[i];
+
+			// [ P인지 확인 ]
+			if (map[0][checkRow][checkCol] == 'P') {
+				// 가장 작은 행 또는 같은 행에서 열이 작은 위치 선택
+				if (checkRow < minRow || (checkRow == minRow && checkCol < minCol)) {
+					minRow = checkRow;
+					minCol = checkCol;
+				}
 			}
 		}
 
-		// [ 2x2 영역 설정 ]
-		if (found_top_left) {
-			// 상대적 위치로 2x2 영역 좌표 설정
-			input_curr[1][0] = input_curr[0][0];     // 위쪽 오른쪽
-			input_curr[1][1] = input_curr[0][1] + 1;
-			input_curr[2][0] = input_curr[0][0] + 1; // 아래쪽 왼쪽
-			input_curr[2][1] = input_curr[0][1];
-			input_curr[3][0] = input_curr[0][0] + 1; // 아래쪽 오른쪽
-			input_curr[3][1] = input_curr[0][1] + 1;
+		// [ 가장 작은 P의 위치를 input_curr[0]에 저장 ]
+		input_curr[0][0] = minRow;
+		input_curr[0][1] = minCol;
 
-			// 한 번에 모든 좌표 처리
-			for (int j = 0; j < 4; j++) {
-				map[0][input_curr[j][0]][input_curr[j][1]] = 'D';
-			}
+		// [ pos2, pos3, pos4 설정 ]
+		input_curr[1][0] = minRow;        // 위쪽 오른쪽
+		input_curr[1][1] = minCol + 1;
+
+		input_curr[2][0] = minRow + 1;    // 아래쪽 왼쪽
+		input_curr[2][1] = minCol;
+
+		input_curr[3][0] = minRow + 1;    // 아래쪽 오른쪽
+		input_curr[3][1] = minCol + 1;
+
+		// [ 맵과 관련된 데이터 업데이트 ]
+		for (int i = 0; i < 4; i++) {
+			map[0][input_curr[i][0]][input_curr[i][1]] = 'D';
 		}
 
 		if (dor_count < MAX_DOR) {
@@ -1043,62 +1066,74 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	if (g_key_press && resource->spice >= 4) {
 		// [ 커서 자리 P ]
 		int input_curr[4][2] = { 0 };
-		bool found_top_left = false;
 
-		// [ 8방향 검사: 'P'로 된 2x2 영역의 왼쪽 위 모서리 좌표 찾기 ]
-		for (int i = 0; i < 8; ++i) {
-			int newRow = curr.row + pRow[i];
-			int newCol = curr.column + pCol[i];
+		// [ 초기값 설정 ]
+		int minRow = curr.row;
+		int minCol = curr.column;
 
-			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
-				input_curr[0][0] = newRow;
-				input_curr[0][1] = newCol;
-				found_top_left = true;
-				break;
-			}
-		}
+		// [ 현재 위치 포함 8방향 검사 배열 ]
+		int dRow[9] = { 0, -1, -1, -1, 0, 1, 1, 1, 0 }; // 현재 위치 포함 (8방향)
+		int dCol[9] = { 0, -1, 0, 1, 1, 1, 0, -1, -1 };
 
-		// [ 2x2 영역 설정 ]
-		if (found_top_left) {
-			// 상대적 위치로 2x2 영역 좌표 설정
-			input_curr[1][0] = input_curr[0][0];     // 위쪽 오른쪽
-			input_curr[1][1] = input_curr[0][1] + 1;
-			input_curr[2][0] = input_curr[0][0] + 1; // 아래쪽 왼쪽
-			input_curr[2][1] = input_curr[0][1];
-			input_curr[3][0] = input_curr[0][0] + 1; // 아래쪽 오른쪽
-			input_curr[3][1] = input_curr[0][1] + 1;
+		for (int i = 0; i < 9; ++i) {
+			int checkRow = curr.row + dRow[i];
+			int checkCol = curr.column + dCol[i];
 
-			// 한 번에 모든 좌표 처리
-			for (int j = 0; j < 4; j++) {
-				map[0][input_curr[j][0]][input_curr[j][1]] = 'G';
-			}
-
-			if (gar_count < MAX_GAR) {
-				OBJECT_BUILDING* new_gar = (OBJECT_BUILDING*)malloc(sizeof(OBJECT_BUILDING));
-				if (!new_gar) {
-					p_system_message("메모리 할당 실패");
-					return;
+			// [ P인지 확인 ]
+			if (map[0][checkRow][checkCol] == 'P') {
+				// 가장 작은 행 또는 같은 행에서 열이 작은 위치 선택
+				if (checkRow < minRow || (checkRow == minRow && checkCol < minCol)) {
+					minRow = checkRow;
+					minCol = checkCol;
 				}
-
-				*new_gar = (OBJECT_BUILDING){
-					{ input_curr[0][0], input_curr[0][1] },
-					{ input_curr[1][0], input_curr[1][1] },
-					{ input_curr[2][0], input_curr[2][1] },
-					{ input_curr[3][0], input_curr[3][1] },
-					'G', 0, 10
-				};
-
-				GAR[gar_count] = new_gar;
-				gar_count++;
-				
-				// [ 생산 자원 소모 ]
-				resource->spice -= 2;
-				p_system_message("숙소를 건설하였습니다.");
-			}
-			else {
-				p_system_message("숙소를 더이상 건설할 수 없습니다.");
 			}
 		}
+
+		// [ 가장 작은 P의 위치를 input_curr[0]에 저장 ]
+		input_curr[0][0] = minRow;
+		input_curr[0][1] = minCol;
+
+		// [ pos2, pos3, pos4 설정 ]
+		input_curr[1][0] = minRow;        // 위쪽 오른쪽
+		input_curr[1][1] = minCol + 1;
+
+		input_curr[2][0] = minRow + 1;    // 아래쪽 왼쪽
+		input_curr[2][1] = minCol;
+
+		input_curr[3][0] = minRow + 1;    // 아래쪽 오른쪽
+		input_curr[3][1] = minCol + 1;
+
+		// [ 맵과 관련된 데이터 업데이트 ]
+		for (int i = 0; i < 4; i++) {
+			map[0][input_curr[i][0]][input_curr[i][1]] = 'G';
+		}
+
+		if (gar_count < MAX_GAR) {
+			OBJECT_BUILDING* new_gar = (OBJECT_BUILDING*)malloc(sizeof(OBJECT_BUILDING));
+			if (!new_gar) {
+				p_system_message("메모리 할당 실패");
+				return;
+			}
+
+			*new_gar = (OBJECT_BUILDING){
+				{ input_curr[0][0], input_curr[0][1] },
+				{ input_curr[1][0], input_curr[1][1] },
+				{ input_curr[2][0], input_curr[2][1] },
+				{ input_curr[3][0], input_curr[3][1] },
+				'G', 0, 10
+			};
+
+			GAR[gar_count] = new_gar;
+			gar_count++;
+				
+			// [ 생산 자원 소모 ]
+			resource->spice -= 2;
+			p_system_message("숙소를 건설하였습니다.");
+		}
+		else {
+			p_system_message("숙소를 더이상 건설할 수 없습니다.");
+		}
+		
 
 		// [ 초기화 ]
 		clear_window(state_backbuf, state_pos, STATE_HEIGHT, STATE_WIDTH);
@@ -1114,35 +1149,48 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	// [ 스페이스바로 병영 설치 ]
 	if (b_b_key_press && resource->spice >= 4) {
 		int input_curr[4][2] = { 0 };
-		
-		// [ 커서 기준 왼쪽 위 모서리 계산 ]
-		int topLeftRow = curr.row - (curr.row % 2);  // 행: 짝수 행으로 보정
-		int topLeftCol = curr.column - (curr.column % 2);  // 열: 짝수 열로 보정
 
-		// [ pos1 설정: 왼쪽 위 모서리 ]
-		input_curr[0][0] = topLeftRow;
-		input_curr[0][1] = topLeftCol;
+		// [ 초기값 설정 ]
+		int minRow = curr.row;
+		int minCol = curr.column;
+
+		// [ 현재 위치 포함 8방향 검사 배열 ]
+		int dRow[9] = { 0, -1, -1, -1, 0, 1, 1, 1, 0 }; // 현재 위치 포함 (8방향)
+		int dCol[9] = { 0, -1, 0, 1, 1, 1, 0, -1, -1 };
+
+		for (int i = 0; i < 9; ++i) {
+			int checkRow = curr.row + dRow[i];
+			int checkCol = curr.column + dCol[i];
+
+			// [ P인지 확인 ]
+			if (map[0][checkRow][checkCol] == 'P') {
+				// 가장 작은 행 또는 같은 행에서 열이 작은 위치 선택
+				if (checkRow < minRow || (checkRow == minRow && checkCol < minCol)) {
+					minRow = checkRow;
+					minCol = checkCol;
+				}
+			}
+		}
+
+		// [ 가장 작은 P의 위치를 input_curr[0]에 저장 ]
+		input_curr[0][0] = minRow;
+		input_curr[0][1] = minCol;
 
 		// [ pos2, pos3, pos4 설정 ]
-		input_curr[1][0] = topLeftRow;        // 위쪽 오른쪽
-		input_curr[1][1] = topLeftCol + 1;
+		input_curr[1][0] = minRow;        // 위쪽 오른쪽
+		input_curr[1][1] = minCol + 1;
 
-		input_curr[2][0] = topLeftRow + 1;    // 아래쪽 왼쪽
-		input_curr[2][1] = topLeftCol;
+		input_curr[2][0] = minRow + 1;    // 아래쪽 왼쪽
+		input_curr[2][1] = minCol;
 
-		input_curr[3][0] = topLeftRow + 1;    // 아래쪽 오른쪽
-		input_curr[3][1] = topLeftCol + 1;
+		input_curr[3][0] = minRow + 1;    // 아래쪽 오른쪽
+		input_curr[3][1] = minCol + 1;
 
 		// [ 맵과 관련된 데이터 업데이트 ]
-		map[0][input_curr[0][0]][input_curr[0][1]] = 'B';
-		map[0][input_curr[1][0]][input_curr[1][1]] = 'B';
-		map[0][input_curr[2][0]][input_curr[2][1]] = 'B';
-		map[0][input_curr[3][0]][input_curr[3][1]] = 'B';
-
-		base_barr_check[input_curr[0][0]][input_curr[0][1]] = 2;
-		base_barr_check[input_curr[1][0]][input_curr[1][1]] = 2;
-		base_barr_check[input_curr[2][0]][input_curr[2][1]] = 2;
-		base_barr_check[input_curr[3][0]][input_curr[3][1]] = 2;
+		for (int i = 0; i < 4; i++) {
+			map[0][input_curr[i][0]][input_curr[i][1]] = 'B';
+			base_barr_check[input_curr[i][0]][input_curr[i][1]] = 2;
+		}
 
 		// 동적 메모리 할당
 		if (bar_count < MAX_BAR) {
@@ -1195,40 +1243,49 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	// [ 스페이스바로 은신처 설치 ]
 	if (s_key_press && resource->spice >= 5) {
 		int input_curr[4][2] = { 0 };
-		bool found_top_left = false;
+		// [ 초기값 설정 ]
+		int minRow = curr.row;
+		int minCol = curr.column;
 
-		// [ 8방향 검사: 'P'로 된 2x2 영역의 왼쪽 위 모서리 좌표 찾기 ]
-		for (int i = 0; i < 8; ++i) {
-			int newRow = curr.row + pRow[i];
-			int newCol = curr.column + pCol[i];
+		// [ 현재 위치 포함 8방향 검사 배열 ]
+		int dRow[9] = { 0, -1, -1, -1, 0, 1, 1, 1, 0 }; // 현재 위치 포함 (8방향)
+		int dCol[9] = { 0, -1, 0, 1, 1, 1, 0, -1, -1 };
 
-			if (frontbuf[newRow][newCol] == 'P' && check_friend[newRow][newCol] == 1) {
-				input_curr[0][0] = newRow;
-				input_curr[0][1] = newCol;
-				found_top_left = true;
-				break;
+		for (int i = 0; i < 9; ++i) {
+			int checkRow = curr.row + dRow[i];
+			int checkCol = curr.column + dCol[i];
+
+			// [ P인지 확인 ]
+			if (map[0][checkRow][checkCol] == 'P') {
+				// 가장 작은 행 또는 같은 행에서 열이 작은 위치 선택
+				if (checkRow < minRow || (checkRow == minRow && checkCol < minCol)) {
+					minRow = checkRow;
+					minCol = checkCol;
+				}
 			}
 		}
 
-		// [ 2x2 영역 설정 ]
-		if (found_top_left) {
-			// 상대적 위치로 2x2 영역 좌표 설정
-			input_curr[1][0] = input_curr[0][0];     // 위쪽 오른쪽
-			input_curr[1][1] = input_curr[0][1] + 1;
-			input_curr[2][0] = input_curr[0][0] + 1; // 아래쪽 왼쪽
-			input_curr[2][1] = input_curr[0][1];
-			input_curr[3][0] = input_curr[0][0] + 1; // 아래쪽 오른쪽
-			input_curr[3][1] = input_curr[0][1] + 1;
+		// [ 가장 작은 P의 위치를 input_curr[0]에 저장 ]
+		input_curr[0][0] = minRow;
+		input_curr[0][1] = minCol;
 
-			// 한 번에 모든 좌표 처리
-			for (int j = 0; j < 4; j++) {
-				map[0][input_curr[j][0]][input_curr[j][1]] = 'S';
-				shle_sold_check[input_curr[j][0]][input_curr[j][1]] = 1;
-			}
+		// [ pos2, pos3, pos4 설정 ]
+		input_curr[1][0] = minRow;        // 위쪽 오른쪽
+		input_curr[1][1] = minCol + 1;
+
+		input_curr[2][0] = minRow + 1;    // 아래쪽 왼쪽
+		input_curr[2][1] = minCol;
+
+		input_curr[3][0] = minRow + 1;    // 아래쪽 오른쪽
+		input_curr[3][1] = minCol + 1;
+
+		// [ 맵과 관련된 데이터 업데이트 ]
+		for (int i = 0; i < 4; i++) {
+			map[0][input_curr[i][0]][input_curr[i][1]] = 'S';
+			shle_sold_check[input_curr[i][0]][input_curr[i][1]] = 1;
 		}
 
 
-		// 
 		if (she_count < MAX_BAR) {
 			OBJECT_BUILDING* new_she = (OBJECT_BUILDING*)malloc(sizeof(OBJECT_BUILDING));
 			
@@ -1565,16 +1622,8 @@ void press_f(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MA
 					p_system_message("인구수가 부족하여 프레멘을 생산할 수 없습니다.");
 					break;
 				}
-
-
-				
 			}
 		}	
 	}
-}
-
-// [ P (순찰) 키를 눌렀을 때 ]
-void press_p_p() {
-
 }
 

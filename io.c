@@ -90,6 +90,12 @@ KEY get_key(void) {
 	case 109:
 		return k_m;
 
+	// [ F키를 누를 때의 행동 ]
+	case 70:
+		return k_f;
+	case 102:
+		return k_f;
+
 	// [ 방향키 입력됐을 때의 행동 ]
 	case 224:
 		byte = _getch();  // MSB 224가 입력 되면 1바이트 더 전달 받기

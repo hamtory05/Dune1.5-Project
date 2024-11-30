@@ -378,8 +378,11 @@ int main(void) {
 
 			case k_m:
 				p_system_message("M키를 눌렀습니다.");
-				m_key_press = true;
 
+			// [ F ]
+			case k_f:
+				p_system_message("F키를 눌렀습니다.");
+				press_f(cursor, &resource, map, &space_key_press);
 
 			case k_none:
 			case k_undef:
@@ -1570,3 +1573,16 @@ void harvest_move_all(OBJECT_SAMPLE havs[MAX_HAV], int hav_count, char map[N_LAY
 	f_hav_obj.next_move_time = sys_clock + f_hav_obj.move_period; // 이동 주기 설정
 }
 
+
+
+// [ 보병 선택 --> 이동, 순찰, 건물 선택 ]
+
+// [ 보병 건물 목적지 정하기 ]
+
+// [ 보병 이동 ]
+
+// [ 보병 유닛 전투 ]
+
+// [ 보병 건물 공격 ]
+
+// [ 보병 움직임 메인 함수 ]

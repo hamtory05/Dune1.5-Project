@@ -65,8 +65,6 @@ void handle_harvester_input(CURSOR cursor, OBJECT_SAMPLE havs[MAX_HAV], int hav_
 
 int spice_in_progress[MAX_SPICE] = { -1 }; // 각 스파이스 매장지에 대한 작업 상태 (-1: 작업 없음)
 
-extern OBJECT_BUILDING* SPICE;
-extern spi_count;
 
 // [ 보병 ]
 OBJECT_SAMPLE* sold[MAX_SOLD];
@@ -79,7 +77,31 @@ extern int base_barr_check[MAP_HEIGHT][MAP_WIDTH];
 OBJECT_SAMPLE* frem[MAX_FREM];
 int frem_count = 0;
 int selected_frem = -1;
+extern int frem_fight_fact_check[MAP_HEIGHT][MAP_WIDTH];
 
+// [ 건물 ]
+extern OBJECT_BUILDING e_base;
+
+extern OBJECT_BUILDING* SPICE;
+extern int spi_count;
+
+extern OBJECT_BUILDING* DOR[MAX_DOR];
+extern int dor_count;
+
+extern OBJECT_BUILDING* GAR[MAX_GAR];
+extern int gar_count;
+
+extern OBJECT_BUILDING* BAR[MAX_BAR];
+extern int bar_count;
+
+extern OBJECT_BUILDING* SHE[MAX_SHE];
+extern int she_count;
+
+extern OBJECT_BUILDING* ARE[MAX_ARE];
+extern int are_count;
+
+extern OBJECT_BUILDING* FAC[MAX_FAC];
+extern int fac_count;
 
 
 /* ================= control =================== */
@@ -113,6 +135,7 @@ bool hav_move = false;
 bool h_key_press = false;
 bool space_and_h_key = false;
 bool space_and_m_key = false;
+
 
 bool m_key_press = false; // 이동 확인
 bool p_p_key_press = false; // 순찰 확인
@@ -1383,7 +1406,7 @@ POSITION harvest_set_dest(POSITION curr, OBJECT_SAMPLE* hav, OBJECT_BUILDING* SP
 	POSITION new_dest = hav->dest;
 
 	// [ 커서가 스파이스 위에 있을 때 ]
-	for (int i = 0; i < 9; i++) {
+	for (int i = 0; i < spi_count; i++) {
 		if (curr.row == SPICE[i].pos1.row && curr.column == SPICE[i].pos1.column) {
 			new_dest.row = SPICE[i].pos1.row;
 			new_dest.column = SPICE[i].pos1.column;
@@ -1574,9 +1597,145 @@ void harvest_move_all(OBJECT_SAMPLE havs[MAX_HAV], int hav_count, char map[N_LAY
 }
 
 
-
 // [ 보병 선택 --> 이동, 순찰, 건물 선택 ]
+void select_sold_act(void) {
+	POSITION curr = cursor.current;
 
+	// [ 보병 선택 ]
+	if (space_key_press && map[0][curr.row][curr.column] == 'S') {
+		for (int i = 0; i < sold_count; i++) {
+			if (sold[i]->pos.row == curr.row && sold[i]->pos.column == curr.column) {
+				selected_sold = i;
+				p_system_message("보병 선택 완료");
+				space_key_press = false;
+				space_and_m_key = true; // 이동
+				p_p_key_press = true; // 순찰
+			}
+		}
+	}
+
+	// [ 보병 이동(M) 목적지 정하기 ]
+	if (space_and_m_key && m_key_press && selected_sold != -1) {
+		// [ 사막 지형을 이동 목적지로 정하기 ]
+		if (map[0][curr.row][curr.column] == ' ') {
+			sold[selected_sold]->dest.row = curr.row;
+			sold[selected_sold]->dest.column = curr.column;
+			p_system_message("커서 위치(사막지형)를 목적지로 설정");
+			selected_sold = -1;
+			m_key_press = false;
+			p_p_key_press = false;
+			space_and_m_key = false;
+		}
+		// [ 적군 본진 이동 목적지로 정하기 ]
+		else if (map[0][curr.row][curr.column] == 'B' && base_barr_check[curr.row][curr.column] == 1 && check_friend[curr.row][curr.column] == 2) {
+			sold[selected_sold]->dest.row = e_base.pos3.row + 1;
+			sold[selected_sold]->dest.column = e_base.pos3.column;
+			p_system_message("적군 본진 위치를 목적지로 설정.");
+			selected_sold = -1;
+			m_key_press = false;
+			p_p_key_press = false;
+			space_and_m_key = false;
+		}
+		// [ 적군 숙소 이동 목적지로 정하기 ]
+		else if (map[0][curr.row][curr.column] == 'D' && check_friend[curr.row][curr.column] == 2) {
+			for (int i = 0; i < dor_count; i++) {
+				if ((DOR[i]->pos1.row == curr.row && DOR[i]->pos1.column == curr.column) || \
+					(DOR[i]->pos2.row == curr.row && DOR[i]->pos2.column == curr.column) || \
+					(DOR[i]->pos3.row == curr.row && DOR[i]->pos3.column == curr.column) || \
+					(DOR[i]->pos4.row == curr.row && DOR[i]->pos4.column == curr.column)) {
+					sold[selected_sold]->dest.row = DOR[i]->pos3.row + 1;
+					sold[selected_sold]->dest.column = DOR[i]->pos3.column;
+					p_system_message("적군 숙소 위치를 목적지로 설정.");
+					selected_sold = -1;
+					m_key_press = false;
+					p_p_key_press = false;
+					space_and_m_key = false;
+					break;
+				}
+			}
+		}
+		// [ 적군 창고 이동 목적지로 정하기 ]
+		else if (map[0][curr.row][curr.column] == 'G' && check_friend[curr.row][curr.column] == 2) {
+			for (int i = 0; i < gar_count; i++) {
+				if ((GAR[i]->pos1.row == curr.row && GAR[i]->pos1.column == curr.column) || \
+					(GAR[i]->pos2.row == curr.row && GAR[i]->pos2.column == curr.column) || \
+					(GAR[i]->pos3.row == curr.row && GAR[i]->pos3.column == curr.column) || \
+					(GAR[i]->pos4.row == curr.row && GAR[i]->pos4.column == curr.column)) {
+					sold[selected_sold]->dest.row = GAR[i]->pos3.row + 1;
+					sold[selected_sold]->dest.column = GAR[i]->pos3.column;
+					p_system_message("적군 창고 위치를 목적지로 설정.");
+					selected_sold = -1;
+					m_key_press = false;
+					p_p_key_press = false;
+					space_and_m_key = false;
+					break;
+				}
+			}
+		}
+		// [ 적군 투기장 이동 목적지로 정하기 ]
+		else if (map[0][curr.row][curr.column] == 'A' && check_friend[curr.row][curr.column] == 2) {
+			for (int i = 0; i < are_count; i++) {
+				if ((ARE[i]->pos1.row == curr.row && ARE[i]->pos1.column == curr.column) || \
+					(ARE[i]->pos2.row == curr.row && ARE[i]->pos2.column == curr.column) || \
+					(ARE[i]->pos3.row == curr.row && ARE[i]->pos3.column == curr.column) || \
+					(ARE[i]->pos4.row == curr.row && ARE[i]->pos4.column == curr.column)) {
+					sold[selected_sold]->dest.row = ARE[i]->pos3.row + 1;
+					sold[selected_sold]->dest.column = ARE[i]->pos3.column;
+					p_system_message("적군 투기장 위치를 목적지로 설정.");
+					selected_sold = -1;
+					m_key_press = false;
+					p_p_key_press = false;
+					space_and_m_key = false;
+					break;
+				}
+			}
+		}
+
+		// [ 적군 공장 이동 목적지로 정하기 ]
+		else if (map[0][curr.row][curr.column] == 'A' && check_friend[curr.row][curr.column] == 2 && \
+			frem_fight_fact_check[curr.row][curr.column] == 1) {
+			for (int i = 0; i < fac_count; i++) {
+				if ((FAC[i]->pos1.row == curr.row && FAC[i]->pos1.column == curr.column) || \
+					(FAC[i]->pos2.row == curr.row && FAC[i]->pos2.column == curr.column) || \
+					(FAC[i]->pos3.row == curr.row && FAC[i]->pos3.column == curr.column) || \
+					(FAC[i]->pos4.row == curr.row && FAC[i]->pos4.column == curr.column)) {
+					sold[selected_sold]->dest.row = FAC[i]->pos3.row + 1;
+					sold[selected_sold]->dest.column = FAC[i]->pos3.column;
+					p_system_message("적군 공장 위치를 목적지로 설정.");
+					selected_sold = -1;
+					m_key_press = false;
+					p_p_key_press = false;
+					space_and_m_key = false;
+					break;
+				}
+			}
+		}
+
+	// [ 보병 순찰(P) 목적지 정하기 ]
+
+
+
+
+
+
+
+
+
+
+
+
+	}
+
+
+
+
+
+
+
+
+
+
+}
 // [ 보병 건물 목적지 정하기 ]
 
 // [ 보병 이동 ]

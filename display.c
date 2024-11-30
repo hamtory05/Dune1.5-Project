@@ -1021,6 +1021,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 		// [ 맵과 관련된 데이터 업데이트 ]
 		for (int i = 0; i < 4; i++) {
 			map[0][input_curr[i][0]][input_curr[i][1]] = 'D';
+			check_friend[input_curr[i][0]][input_curr[i][1]] = 1;
 		}
 
 		if (dor_count < MAX_DOR) {
@@ -1106,6 +1107,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 		// [ 맵과 관련된 데이터 업데이트 ]
 		for (int i = 0; i < 4; i++) {
 			map[0][input_curr[i][0]][input_curr[i][1]] = 'G';
+			check_friend[input_curr[i][0]][input_curr[i][1]] = 1;
 		}
 
 		if (gar_count < MAX_GAR) {
@@ -1212,15 +1214,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 
 			// [ 배열에 추가 ]
 			BAR[bar_count] = new_bar;
-
-			/*char mes[100];
-			sprintf_s(mes, sizeof(mes), "pos1 -> %d %d, pos2 -> %d %d", BAR[0]->pos1.row, BAR[0]->pos1.column,
-				BAR[0]->pos2.row, BAR[0]->pos2.column);
-			p_system_message(mes);*/
-
 			bar_count++;
-
-
 
 			// [ 생산 자원 소모 ]
 			resource->spice -= 4;
@@ -1327,8 +1321,6 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 		p_system_message("생산자원이 부족하여 건설할 수 없습니다.");
 		return_cursor = true;
 	}
-
-
 }
 
 // [ ESC 키를 눌렀을 때 ]

@@ -1593,7 +1593,15 @@ void press_f(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MA
 							.hp = 25,
 							.eyes = 8,
 							.attack_period = 200,
-							.next_attack_time = 200
+							.next_attack_time = 200,
+							.patrol_point = {-1, -1},
+							.is_patrolling = false,
+							.original_dest = {-1, -1},
+							.e_base_attack = false,
+							.e_dor_attack = false,
+							.e_gar_attack = false,
+							.e_arena_attack = false,
+							.e_factory_attack = false
 						};
 
 						// [ 배열에 프레멘 넣기 ]

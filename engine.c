@@ -79,11 +79,6 @@ int selected_sold = -1;
 
 extern int base_barr_check[MAP_HEIGHT][MAP_WIDTH];
 
-bool enemy_base_attack = false;
-bool enemy_dor_attack = false;
-bool enemy_gar_attack = false;
-bool enemy_arena_attack = false;
-bool enemy_factory_attack = false;
 bool sold_p_key_press = false;
 
 void select_sold_act(void);
@@ -101,6 +96,19 @@ OBJECT_SAMPLE* frem[MAX_FREM];
 int frem_count = 0;
 int selected_frem = -1;
 extern int frem_fight_fact_check[MAP_HEIGHT][MAP_WIDTH];
+
+bool frem_p_key_press = false;
+
+void select_frem_act(void);
+void frem_attack_building(void);
+void frem_attack_unit(void);
+void frem_main_kill_unit(int row, int col, OBJECT_SAMPLE* frem);
+void frem_kill_enemy_hav(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* harvester);
+void frem_kill_enemy_fighter(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* fighter);
+void frem_kill_enemy_tank(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* tank);
+POSITION frem_move(OBJECT_SAMPLE* frem, POSITION target_pos);
+void frem_main_func(void);
+
 
 // [ 투사 ]
 OBJECT_SAMPLE* fighter[MAX_FIGHTER];
@@ -388,9 +396,10 @@ int main(void) {
 						press_p();
 					}
 				}
-				// [ 보병 순찰 선택 ]
+				// [ 보병, 프레멘 순찰 선택 ]
 				if (map[0][cursor.current.row][cursor.current.column] == ' ') {
 					sold_p_key_press = true;
+					frem_p_key_press = true;
 				}
 				
 				b_key_press = false;
@@ -465,7 +474,7 @@ int main(void) {
 		}
 	
 		// [ 오브젝트 동작 ]
-		d_eagle_move();
+		//d_eagle_move();
 		sw1_move();
 		sw2_move(); 
 
@@ -475,6 +484,8 @@ int main(void) {
 		// [ 보병 움직이기 ]
 		main_sold_func();
 		
+		// [ 프레멘 움직이기 ]
+		frem_main_func();
 
 		// [ 화면 출력 ]
 		display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend, big_cursor);
@@ -609,7 +620,7 @@ void init_order(void) {
 
 void init_unit(void) {
 	// [ 사막 독수리 ]
-	map[2][d_eagle.pos.row][d_eagle.pos.column] = d_eagle.repr;
+	//map[2][d_eagle.pos.row][d_eagle.pos.column] = d_eagle.repr;
 
 	// [ 아군 하베스터 ]
 	map[1][f_hav_obj.pos.row][f_hav_obj.pos.column] = f_hav_obj.repr; 
@@ -1916,6 +1927,9 @@ void sold_attack_building(void) {
 					map[0][e_base.pos3.row][e_base.pos3.column] = ' ';
 					map[0][e_base.pos4.row][e_base.pos4.column] = ' ';
 					sold[i]->e_base_attack = false;
+
+					// [ 게임 종료 ]
+					outro();
 				}
 				else {
 					e_base.hp -= sold[i]->dps;
@@ -2314,8 +2328,10 @@ POSITION sold_move(OBJECT_SAMPLE* sold_unit, POSITION target_pos) {
 	}
 
 	// 장애물 확인 및 대체 경로 계산
-	char target_tile = map[0][next_pos.row][next_pos.column];
-	if (target_tile != ' ') {
+	char target_tile = map[0][next_pos.row][next_pos.column]; // 건물
+	char target_tile2 = map[1][next_pos.row][next_pos.column]; // 샌드웜
+
+	if (target_tile != ' ' || target_tile2 == 'W') {
 		// 장애물을 회피하기 위해 대체 경로 계산
 		double best_distance = DBL_MAX;
 		POSITION best_pos = sold_unit->pos;
@@ -2333,7 +2349,7 @@ POSITION sold_move(OBJECT_SAMPLE* sold_unit, POSITION target_pos) {
 
 			// 대체 경로가 장애물이 아닌지 확인
 			char alt_tile = map[0][alt_pos.row][alt_pos.column];
-			if (alt_tile == ' ') {
+			if (alt_tile == ' ' && target_tile2 != 'W') {
 				double distance = sqrt(pow(target_pos.row - alt_pos.row, 2) +
 					pow(target_pos.column - alt_pos.column, 2));
 				if (distance < best_distance) {
@@ -2425,14 +2441,711 @@ void main_sold_func(void) {
 	sold_attack_building();
 
 	// [ 보병 유닛 공격 ]
-	if (enemy_base_attack == false && enemy_dor_attack == false && \
-		enemy_arena_attack == false && enemy_factory_attack == false && enemy_gar_attack == false) {
-		sold_attack_unit();
+	for (int i = 0; i < sold_count; i++) {
+		if (sold[i]->e_arena_attack == false && sold[i]->e_dor_attack == false && sold[i]->e_gar_attack == false &&\
+			sold[i]->e_base_attack == false && sold[i]->e_factory_attack == false) {
+			sold_attack_unit();
+		}
 	}
+	
 	
 
 	// [ 이동 주기 ]
 	for (int i = 0; i < sold_count; i++) {
 		sold[i]->move_period = sys_clock + sold[i]->next_move_time;
+	}
+}
+
+
+
+
+// [ 프레멘 선택 --> 이동, 순찰, 건물선택 ]
+void select_frem_act(void) {
+	POSITION curr = cursor.current;
+
+	// [ 프레멘 선택 ]
+	if (space_key_press && map[1][curr.row][curr.column] == 'F' && \
+		frem_fight_fact_check[curr.row][curr.column] == 2) {
+		for (int i = 0; i < frem_count; i++) {
+			if (frem[i]->pos.row == curr.row && frem[i]->pos.column == curr.column) {
+				selected_frem = i;
+				p_system_message("프레멘 선택 완료");
+				space_key_press = false;
+				space_and_m_key = true; // 이동
+				p_p_key_press = true; // 순찰
+				break;
+			}
+		}
+	}
+
+	// [ 프레멘 이동 (M) 목적지 정하기 ]
+	if (space_and_m_key && m_key_press && selected_frem != -1) {
+		// [ 순찰 비활성화 ]
+		frem[selected_frem]->is_patrolling = false;
+
+		// [ 사막 지형을 이동 목적지로 정하기 ]
+		if (map[0][curr.row][curr.column] == ' ') {
+			frem[selected_frem]->dest.row = curr.row;
+			frem[selected_frem]->dest.column = curr.column;
+			p_system_message("커서 위치(사막지형)를 목적지로 설정");
+			selected_frem = -1;
+			m_key_press = false;
+			p_p_key_press = false;
+			space_and_m_key = false;
+		}
+		// [ 적군 본진 이동 목적지로 정하기 ]
+		else if (map[0][curr.row][curr.column] == 'B' && base_barr_check[curr.row][curr.column] == 1 && check_friend[curr.row][curr.column] == 2) {
+			frem[selected_frem]->dest.row = e_base.pos3.row + 1;
+			frem[selected_frem]->dest.column = e_base.pos3.column;
+			frem[selected_frem]->e_base_attack = true;
+			p_system_message("적군 본진 위치를 목적지로 설정.");
+			selected_frem = -1;
+			m_key_press = false;
+			p_p_key_press = false;
+			space_and_m_key = false;
+		}
+		// [ 적군 숙소 이동 목적지로 정하기 ]
+		else if (map[0][curr.row][curr.column] == 'D' && check_friend[curr.row][curr.column] == 2) {
+			for (int i = 0; i < dor_count; i++) {
+				if ((DOR[i]->pos1.row == curr.row && DOR[i]->pos1.column == curr.column) || \
+					(DOR[i]->pos2.row == curr.row && DOR[i]->pos2.column == curr.column) || \
+					(DOR[i]->pos3.row == curr.row && DOR[i]->pos3.column == curr.column) || \
+					(DOR[i]->pos4.row == curr.row && DOR[i]->pos4.column == curr.column)) {
+					frem[selected_frem]->dest.row = DOR[i]->pos3.row + 1;
+					frem[selected_frem]->dest.column = DOR[i]->pos3.column;
+					frem[selected_frem]->e_dor_attack = true;
+					p_system_message("적군 숙소 위치를 목적지로 설정.");
+					selected_frem = -1;
+					m_key_press = false;
+					p_p_key_press = false;
+					space_and_m_key = false;
+					break;
+				}
+			}
+		}
+		// [ 적군 창고 이동 목적지로 정하기 ]
+		else if (map[0][curr.row][curr.column] == 'G' && check_friend[curr.row][curr.column] == 2) {
+			for (int i = 0; i < gar_count; i++) {
+				if ((GAR[i]->pos1.row == curr.row && GAR[i]->pos1.column == curr.column) || \
+					(GAR[i]->pos2.row == curr.row && GAR[i]->pos2.column == curr.column) || \
+					(GAR[i]->pos3.row == curr.row && GAR[i]->pos3.column == curr.column) || \
+					(GAR[i]->pos4.row == curr.row && GAR[i]->pos4.column == curr.column)) {
+					frem[selected_frem]->dest.row = GAR[i]->pos3.row + 1;
+					frem[selected_frem]->dest.column = GAR[i]->pos3.column;
+					frem[selected_frem]->e_gar_attack = true;
+					p_system_message("적군 창고 위치를 목적지로 설정.");
+					selected_frem = -1;
+					m_key_press = false;
+					p_p_key_press = false;
+					space_and_m_key = false;
+					break;
+				}
+			}
+		}
+		// [ 적군 투기장 이동 목적지로 정하기 ]
+		else if (map[0][curr.row][curr.column] == 'A' && check_friend[curr.row][curr.column] == 2) {
+			for (int i = 0; i < are_count; i++) {
+				if ((ARE[i]->pos1.row == curr.row && ARE[i]->pos1.column == curr.column) || \
+					(ARE[i]->pos2.row == curr.row && ARE[i]->pos2.column == curr.column) || \
+					(ARE[i]->pos3.row == curr.row && ARE[i]->pos3.column == curr.column) || \
+					(ARE[i]->pos4.row == curr.row && ARE[i]->pos4.column == curr.column)) {
+					frem[selected_frem]->dest.row = ARE[i]->pos3.row + 1;
+					frem[selected_frem]->dest.column = ARE[i]->pos3.column;
+					frem[selected_frem]->e_arena_attack = true;
+					p_system_message("적군 투기장 위치를 목적지로 설정.");
+					selected_frem = -1;
+					m_key_press = false;
+					p_p_key_press = false;
+					space_and_m_key = false;
+					break;
+				}
+			}
+		}
+
+		// [ 적군 공장 이동 목적지로 정하기 ]
+		else if (map[0][curr.row][curr.column] == 'A' && check_friend[curr.row][curr.column] == 2 && \
+			frem_fight_fact_check[curr.row][curr.column] == 1) {
+			for (int i = 0; i < fac_count; i++) {
+				if ((FAC[i]->pos1.row == curr.row && FAC[i]->pos1.column == curr.column) || \
+					(FAC[i]->pos2.row == curr.row && FAC[i]->pos2.column == curr.column) || \
+					(FAC[i]->pos3.row == curr.row && FAC[i]->pos3.column == curr.column) || \
+					(FAC[i]->pos4.row == curr.row && FAC[i]->pos4.column == curr.column)) {
+					frem[selected_frem]->dest.row = FAC[i]->pos3.row + 1;
+					frem[selected_frem]->dest.column = FAC[i]->pos3.column;
+					frem[selected_frem]->e_factory_attack = true;
+					p_system_message("적군 공장 위치를 목적지로 설정.");
+					selected_frem = -1;
+					m_key_press = false;
+					p_p_key_press = false;
+					space_and_m_key = false;
+					break;
+				}
+			}
+		}
+
+		// [ 프레멘 순찰(P) 목적지 정하기 ]
+		if (p_p_key_press && frem_p_key_press && selected_frem != -1) {
+			if (map[0][curr.row][curr.column] == ' ') {
+				frem[selected_frem]->patrol_point.row = frem[selected_frem]->pos.row;
+				frem[selected_frem]->patrol_point.column = frem[selected_frem]->pos.column;
+				frem[selected_frem]->dest.row = curr.row;
+				frem[selected_frem]->dest.column = curr.column;
+				frem[selected_frem]->is_patrolling = true; // 순찰 모드 활성화
+				p_system_message("순찰 위치 설정 완료. 순찰 시작.");
+				selected_frem = -1;
+				p_key_press = false;
+				p_p_key_press = false;
+				frem_p_key_press = false;
+			}
+			else {
+				p_system_message("순찰 위치를 설정할 수 없는 지형입니다.");
+				p_p_key_press = false;
+			}
+		}
+	}
+}
+
+// [ 프레멘 건물 공격 ]
+void frem_attack_building(void) {
+	for (int i = 0; i < frem_count; i++) {
+		// [ 목적지에 도착했을 때 ]
+		if (frem[i]->pos.row == frem[i]->dest.row && frem[i]->pos.column == frem[i]->dest.column) {
+			// [ 적군 본진을 공격하라고 명령을 받았을 때 ]
+			if (frem[i]->e_base_attack) {
+				if (sys_clock <= frem[i]->attack_period) {
+					return;
+				}
+
+				if (e_base.hp <= 0) {
+					p_system_message("적군 본진이 프레멘에 의해 파괴되었습니다.");
+					e_base.hp = 0;
+					e_base.repr = ' ';
+					map[0][e_base.pos1.row][e_base.pos1.column] = ' ';
+					map[0][e_base.pos2.row][e_base.pos2.column] = ' ';
+					map[0][e_base.pos3.row][e_base.pos3.column] = ' ';
+					map[0][e_base.pos4.row][e_base.pos4.column] = ' ';
+					frem[i]->e_base_attack = false;
+
+					// [ 게임 종료 ]
+					outro();
+				}
+				else {
+					e_base.hp -= frem[i]->dps;
+					p_system_message("프레멘이 본진을 공격했습니다.");
+					char mes[100];
+					sprintf_s(mes, sizeof(mes), "적군 본진의 내구도가 %d로 감소했습니다.", e_base.hp);
+					p_system_message(mes);
+				}
+				frem[i]->attack_period = sys_clock + frem[i]->next_attack_time;
+			}
+			// [ 적군 숙소를 공격하라고 명령을 받았을 때 ]
+			else if (frem[i]->e_dor_attack) {
+				if (sys_clock <= frem[i]->attack_period) {
+					return;
+				}
+
+				for (int j = 0; j < e_dor_count; j++) {
+					if ((frem[i]->pos.row - 1 == E_DOR[j]->pos1.row && frem[i]->pos.column == E_DOR[j]->pos1.column) || \
+						(frem[i]->pos.row - 1 == E_DOR[j]->pos2.row && frem[i]->pos.column == E_DOR[j]->pos2.column) || \
+						(frem[i]->pos.row - 1 == E_DOR[j]->pos3.row && frem[i]->pos.column == E_DOR[j]->pos3.column) || \
+						(frem[i]->pos.row - 1 == E_DOR[j]->pos4.row && frem[i]->pos.column == E_DOR[j]->pos4.column)) {
+						if (E_DOR[j]->hp <= 0) {
+							p_system_message("적군 숙소가 프레멘에 의해 파괴되었습니다.");
+							E_DOR[j]->hp = 0;
+							E_DOR[j]->repr = ' ';
+							map[0][E_DOR[j]->pos1.row][E_DOR[j]->pos1.column] = ' ';
+							map[0][E_DOR[j]->pos2.row][E_DOR[j]->pos2.column] = ' ';
+							map[0][E_DOR[j]->pos3.row][E_DOR[j]->pos3.column] = ' ';
+							map[0][E_DOR[j]->pos4.row][E_DOR[j]->pos4.column] = ' ';
+							frem[i]->e_dor_attack = false;
+						}
+						else {
+							E_DOR[j]->hp -= frem[i]->dps;
+							p_system_message("프레멘이 숙소를 공격했습니다.");
+							char mes[100];
+							sprintf_s(mes, sizeof(mes), "적군 숙소의 내구도가 %d로 감소했습니다.", E_DOR[j]->hp);
+							p_system_message(mes);
+						}
+					}
+				}
+				frem[i]->attack_period = sys_clock + frem[i]->next_attack_time;
+			}
+			// [ 적군 창고를 공격하라고 명령을 받았을 때 ]
+			else if (frem[i]->e_gar_attack) {
+				if (sys_clock <= frem[i]->attack_period) {
+					return;
+				}
+
+				for (int j = 0; j < e_gar_count; j++) {
+					if ((frem[i]->pos.row - 1 == E_GAR[j]->pos1.row && frem[i]->pos.column == E_GAR[j]->pos1.column) || \
+						(frem[i]->pos.row - 1 == E_GAR[j]->pos2.row && frem[i]->pos.column == E_GAR[j]->pos2.column) || \
+						(frem[i]->pos.row - 1 == E_GAR[j]->pos3.row && frem[i]->pos.column == E_GAR[j]->pos3.column) || \
+						(frem[i]->pos.row - 1 == E_GAR[j]->pos4.row && frem[i]->pos.column == E_GAR[j]->pos4.column)) {
+						if (E_GAR[j]->hp <= 0) {
+							p_system_message("적군 창고가 프레멘에 의해 파괴되었습니다.");
+							E_GAR[j]->hp = 0;
+							E_GAR[j]->repr = ' ';
+							map[0][E_GAR[j]->pos1.row][E_GAR[j]->pos1.column] = ' ';
+							map[0][E_GAR[j]->pos2.row][E_GAR[j]->pos2.column] = ' ';
+							map[0][E_GAR[j]->pos3.row][E_GAR[j]->pos3.column] = ' ';
+							map[0][E_GAR[j]->pos4.row][E_GAR[j]->pos4.column] = ' ';
+							frem[i]->e_gar_attack = false;
+						}
+						else {
+							E_GAR[j]->hp -= frem[i]->dps;
+							p_system_message("프레멘이 창고를 공격했습니다.");
+							char mes[100];
+							sprintf_s(mes, sizeof(mes), "적군 창고의 내구도가 %d로 감소했습니다.", E_GAR[j]->hp);
+							p_system_message(mes);
+						}
+					}
+				}
+				frem[i]->attack_period = sys_clock + frem[i]->next_attack_time;
+			}
+			// [ 적군 투기장을 공격하라고 명령을 받았을 때 ]
+			else if (frem[i]->e_arena_attack) {
+				if (sys_clock <= frem[i]->attack_period) {
+					return;
+				}
+
+
+				for (int j = 0; j < are_count; j++) {
+					if ((frem[i]->pos.row - 1 == ARE[j]->pos1.row && frem[i]->pos.column == ARE[j]->pos1.column) || \
+						(frem[i]->pos.row - 1 == ARE[j]->pos2.row && frem[i]->pos.column == ARE[j]->pos2.column) || \
+						(frem[i]->pos.row - 1 == ARE[j]->pos3.row && frem[i]->pos.column == ARE[j]->pos3.column) || \
+						(frem[i]->pos.row - 1 == ARE[j]->pos4.row && frem[i]->pos.column == ARE[j]->pos4.column)) {
+						if (ARE[j]->hp <= 0) {
+							p_system_message("적군 은신처가 프레멘에 의해 파괴되었습니다.");
+							ARE[j]->hp = 0;
+							ARE[j]->repr = ' ';
+							map[0][ARE[j]->pos1.row][ARE[j]->pos1.column] = ' ';
+							map[0][ARE[j]->pos2.row][ARE[j]->pos2.column] = ' ';
+							map[0][ARE[j]->pos3.row][ARE[j]->pos3.column] = ' ';
+							map[0][ARE[j]->pos4.row][ARE[j]->pos4.column] = ' ';
+							frem[i]->e_arena_attack = false;
+						}
+						else {
+							ARE[j]->hp -= frem[i]->dps;
+							p_system_message("프레멘이 은신처를 공격했습니다.");
+							char mes[100];
+							sprintf_s(mes, sizeof(mes), "적군 은신처의 내구도가 %d로 감소했습니다.", ARE[j]->hp);
+							p_system_message(mes);
+						}
+					}
+				}
+				frem[i]->attack_period = sys_clock + frem[i]->next_attack_time;
+			}
+			// [ 적군 공장을 공격하라고 명령을 받았을 때 ]
+			else if (frem[i]->e_factory_attack) {
+				if (sys_clock <= frem[i]->attack_period) {
+					return;
+				}
+
+				for (int j = 0; j < fac_count; j++) {
+					if ((frem[i]->pos.row - 1 == FAC[j]->pos1.row && frem[i]->pos.column == FAC[j]->pos1.column) || \
+						(frem[i]->pos.row - 1 == FAC[j]->pos2.row && frem[i]->pos.column == FAC[j]->pos2.column) || \
+						(frem[i]->pos.row - 1 == FAC[j]->pos3.row && frem[i]->pos.column == FAC[j]->pos3.column) || \
+						(frem[i]->pos.row - 1 == FAC[j]->pos4.row && frem[i]->pos.column == FAC[j]->pos4.column)) {
+						if (FAC[j]->hp <= 0) {
+							p_system_message("적군 공장이 프레멘에 의해 파괴되었습니다.");
+							FAC[j]->hp = 0;
+							FAC[j]->repr = ' ';
+							map[0][FAC[j]->pos1.row][FAC[j]->pos1.column] = ' ';
+							map[0][FAC[j]->pos2.row][FAC[j]->pos2.column] = ' ';
+							map[0][FAC[j]->pos3.row][FAC[j]->pos3.column] = ' ';
+							map[0][FAC[j]->pos4.row][FAC[j]->pos4.column] = ' ';
+							frem[i]->e_factory_attack = false;
+						}
+						else {
+							FAC[j]->hp -= frem[i]->dps;
+							p_system_message("프레멘이 공장을 공격했습니다.");
+							char mes[100];
+							sprintf_s(mes, sizeof(mes), "적군 공장의 내구도가 %d로 감소했습니다.", FAC[j]->hp);
+							p_system_message(mes);
+						}
+					}
+				}
+				frem[i]->attack_period = sys_clock + frem[i]->next_attack_time;
+			}
+		}
+	}
+}
+
+// [ 프레멘 유닛 공격 ]
+void frem_attack_unit(void) {
+	for (int i = 0; i < frem_count; i++) {
+		// [ 프레멘 시야 선언 ]
+		int sight = frem[i]->eyes;
+
+		// [ 프레멘 현재 위치 ]
+		int current_row = frem[i]->pos.row;
+		int current_col = frem[i]->pos.column;
+
+		// [ 프레멘 주변에 유닛 있는지 확인 ]
+		for (int row = current_row - sight; row <= current_row + sight; row++) {
+			for (int col = current_col - sight; col <= current_col + sight; col++) {
+				// [ 맵 경계 확인 ]
+				if (row < 0 || row >= MAP_HEIGHT || col < 0 || col >= MAP_WIDTH) continue;
+
+				// [ 프레멘 자신 제외 ]
+				if (row == current_row && col == current_col) continue;
+
+				// [ 유닛 처리 함수 호출 ]
+				frem_main_kill_unit(row, col, frem[i]);
+			}
+		}
+	}
+}
+
+// Main - [ 적 유닛 처리 함수 ]
+void frem_main_kill_unit(int row, int col, OBJECT_SAMPLE* frem) {
+	// [ 적군 하베스터 확인 ]
+	for (int j = 0; j < e_hav_count; j++) {
+		if (row == e_havs[j]->pos.row && col == e_havs[j]->pos.column && check_friend[row][col] == 2 && \
+			e_havs[j]->repr == 'H') {
+			p_system_message("프레멘이 적군 하베스터를 발견했습니다.");
+			p_system_message("프레멘이 적군 하베스터를 목표로 삼았습니다.");
+			frem_kill_enemy_hav(frem, e_havs[j]);
+			return; // 하베스터 처리 후 종료
+		}
+	}
+
+	// [ 적군 투사 확인 ]
+	for (int j = 0; j < fighter_count; j++) {
+		if (row == fighter[j]->pos.row && col == fighter[j]->pos.column && frem_fight_fact_check[row][col] == 3 && \
+			fighter[j]->repr == 'F') {
+			p_system_message("보병이 적군 투사를 발견했습니다.");
+			p_system_message("보병이 적군 투사를 목표로 삼았습니다.");
+			frem_kill_enemy_fighter(frem, fighter[j]);
+			return; // 투사 처리 후 종료
+		}
+	}
+
+	// [ 적군 중전차 확인 ]
+	for (int j = 0; j < tank_count; j++) {
+		if (row == tank[j]->pos.row && col == tank[j]->pos.column && tank[j]->repr == 'T') {
+			p_system_message("보병이 적군 중전차 발견했습니다.");
+			p_system_message("보병이 적군 투사를 목표로 삼았습니다.");
+			frem_kill_enemy_tank(frem, tank[j]);
+			return; // 중전차 처리 후 종료
+		}
+	}
+}
+
+// 1 - [ 적 하베스터 처리 함수 ]
+void frem_kill_enemy_hav(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* harvester) {
+	// [ 적 주변의 빈 공간 확인 및 이동 ]
+	int check_row[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+	int check_col[] = { 0, -1, -1, -1, 0, 1, 1, 1 };
+
+	for (int k = 0; k < 8; k++) {
+		int dest_row = harvester->pos.row + check_row[k];
+		int dest_col = harvester->pos.column + check_col[k];
+
+		if (dest_row >= 0 && dest_row < MAP_HEIGHT && dest_col >= 0 && dest_col < MAP_WIDTH &&
+			map[0][dest_row][dest_col] == ' ') {
+			frem->dest.row = dest_row;
+			frem->dest.column = dest_col;
+
+			POSITION next_pos = frem->pos;
+
+			// 이동 방향 결정
+			if (next_pos.row < frem->dest.row) next_pos.row++;
+			else if (next_pos.row > frem->dest.row) next_pos.row--;
+
+			if (next_pos.column < frem->dest.column) next_pos.column++;
+			else if (next_pos.column > frem->dest.column) next_pos.column--;
+
+			// 장애물 처리
+			next_pos = frem_move(frem, next_pos);
+
+			// 이동 적용
+			frem->pos = next_pos;
+
+			// 목적지 도달 시 공격
+
+			// [ 공격 주기 ]
+			if (sys_clock <= frem->attack_period) {
+				return;
+			}
+
+			if (frem->pos.row == frem->dest.row && frem->pos.column == frem->dest.column) {
+				if (harvester->hp <= 0) {
+					p_system_message("적군 하베스터이 보병에 의해 사망하였습니다.");
+					harvester->repr = ' ';
+					map[1][harvester->pos.row][harvester->pos.column] = harvester->repr;
+				}
+				else {
+					harvester->hp -= frem->dps;
+					char mes[100];
+					sprintf_s(mes, sizeof(mes), "적군 하베스터가 보병에게 공격받아 hp가 %d로 감소했습니다.", harvester->hp);
+					p_system_message(mes);
+				}
+			}
+
+			frem->attack_period = sys_clock + frem->next_attack_time;
+			break;
+		}
+	}
+}
+
+// 2 - [ 적 투사 처리 함수 ]
+void frem_kill_enemy_fighter(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* fighter) {
+	// [ 적 주변의 빈 공간 확인 및 이동 ]
+	int check_row[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+	int check_col[] = { 0, -1, -1, -1, 0, 1, 1, 1 };
+
+	for (int k = 0; k < 8; k++) {
+		int dest_row = fighter->pos.row + check_row[k];
+		int dest_col = fighter->pos.column + check_col[k];
+
+		if (dest_row >= 0 && dest_row < MAP_HEIGHT && dest_col >= 0 && dest_col < MAP_WIDTH &&
+			map[0][dest_row][dest_col] == ' ') {
+			frem->dest.row = dest_row;
+			frem->dest.column = dest_col;
+
+			POSITION next_pos = frem->pos;
+
+			// 이동 방향 결정
+			if (next_pos.row < frem->dest.row) next_pos.row++;
+			else if (next_pos.row > frem->dest.row) next_pos.row--;
+
+			if (next_pos.column < frem->dest.column) next_pos.column++;
+			else if (next_pos.column > frem->dest.column) next_pos.column--;
+
+			// 장애물 처리
+			next_pos = frem_move(frem, next_pos);
+
+			// 이동 적용
+			frem->pos = next_pos;
+
+			// [ 공격 주기 ]
+			if (sys_clock <= frem->attack_period) {
+				return;
+			}
+
+			// 목적지 도달 시 공격
+			if (frem->pos.row == frem->dest.row && frem->pos.column == frem->dest.column) {
+				if (fighter->hp <= 0) {
+					p_system_message("적군 투사가 보병에 의해 사망하였습니다.");
+					fighter->repr = ' ';
+					map[1][fighter->pos.row][fighter->pos.column] = fighter->repr;
+				}
+				else {
+					fighter->hp -= frem->dps;
+					char mes[100];
+					sprintf_s(mes, sizeof(mes), "적군 투사가 보병에게 공격받아 hp가 %d로 감소했습니다.", fighter->hp);
+					p_system_message(mes);
+				}
+			}
+			frem->attack_period = sys_clock + frem->next_attack_time;
+			break;
+		}
+	}
+}
+
+// 3 - [ 적 중전차 처리 함수 ]
+void frem_kill_enemy_tank(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* tank) {
+	// [ 적 주변의 빈 공간 확인 및 이동 ]
+	int check_row[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+	int check_col[] = { 0, -1, -1, -1, 0, 1, 1, 1 };
+
+	for (int k = 0; k < 8; k++) {
+		int dest_row = tank->pos.row + check_row[k];
+		int dest_col = tank->pos.column + check_col[k];
+
+		if (dest_row >= 0 && dest_row < MAP_HEIGHT && dest_col >= 0 && dest_col < MAP_WIDTH &&
+			map[0][dest_row][dest_col] == ' ') {
+			frem->dest.row = dest_row;
+			frem->dest.column = dest_col;
+
+			POSITION next_pos = frem->pos;
+
+			// 이동 방향 결정
+			if (next_pos.row < frem->dest.row) next_pos.row++;
+			else if (next_pos.row > frem->dest.row) next_pos.row--;
+
+			if (next_pos.column < frem->dest.column) next_pos.column++;
+			else if (next_pos.column > frem->dest.column) next_pos.column--;
+
+			// 장애물 처리
+			next_pos = frem_move(frem, next_pos);
+
+			// 이동 적용
+			frem->pos = next_pos;
+
+			// 목적지 도달 시 공격
+
+			// [ 공격 주기 ]
+			if (sys_clock <= frem->attack_period) {
+				return;
+			}
+
+			if (frem->pos.row == frem->dest.row && frem->pos.column == frem->dest.column) {
+				if (tank->hp <= 0) {
+					p_system_message("적군 중전차가 보병에 의해 파괴되었습니다.");
+					tank->repr = ' ';
+					map[1][tank->pos.row][tank->pos.column] = tank->repr;
+				}
+				else {
+					tank->hp -= frem->dps;
+					char mes[100];
+					sprintf_s(mes, sizeof(mes), "적군 중전차가 보병에게 공격받아 hp가 %d로 감소했습니다.", tank->hp);
+					p_system_message(mes);
+				}
+			}
+			frem->attack_period = sys_clock + frem->next_attack_time;
+			break;
+		}
+	}
+}
+
+// [ 프레멘 이동 함수 ]
+POSITION frem_move(OBJECT_SAMPLE* frem, POSITION target_pos) {
+	POSITION diff = psub(target_pos, frem->pos);
+	DIRECTION dir;
+
+	// 가로축과 세로축 중 더 먼 쪽으로 이동 방향 결정
+	if (abs(diff.row) >= abs(diff.column)) {
+		dir = (diff.row >= 0) ? d_down : d_up;
+	}
+	else {
+		dir = (diff.column >= 0) ? d_right : d_left;
+	}
+
+	// 기본 이동 위치 계산
+	POSITION next_pos = pmove(frem->pos, dir);
+
+	// 맵 내 범위 확인
+	if (next_pos.row < 1 || next_pos.row >= MAP_HEIGHT - 1 ||
+		next_pos.column < 1 || next_pos.column >= MAP_WIDTH - 1) {
+		return frem->pos; // 이동할 수 없으면 현재 위치 유지
+	}
+
+	// 장애물 확인 및 대체 경로 계산
+	char target_tile = map[0][next_pos.row][next_pos.column]; // 건물
+	char target_tile2 = map[1][next_pos.row][next_pos.column]; // 샌드웜
+	if (target_tile != ' ' || target_tile2 == 'W') {
+		// 장애물을 회피하기 위해 대체 경로 계산
+		double best_distance = DBL_MAX;
+		POSITION best_pos = frem->pos;
+
+		// 상하좌우로 가능한 대체 경로 탐색
+		DIRECTION alternate_dirs[] = { d_up, d_down, d_left, d_right };
+		for (int j = 0; j < 4; j++) {
+			POSITION alt_pos = pmove(frem->pos, alternate_dirs[j]);
+
+			// 대체 경로가 맵 내에 있는지 확인
+			if (alt_pos.row < 1 || alt_pos.row >= MAP_HEIGHT - 1 ||
+				alt_pos.column < 1 || alt_pos.column >= MAP_WIDTH - 1) {
+				continue; // 맵 밖이면 스킵
+			}
+
+			// 대체 경로가 장애물이 아닌지 확인
+			char alt_tile = map[0][alt_pos.row][alt_pos.column];
+			if (alt_tile == ' ' && target_tile2 != 'W') {
+				double distance = sqrt(pow(target_pos.row - alt_pos.row, 2) +
+					pow(target_pos.column - alt_pos.column, 2));
+				if (distance < best_distance) {
+					best_distance = distance;
+					best_pos = alt_pos;
+				}
+			}
+		}
+		return best_pos; // 가장 가까운 대체 경로 반환
+	}
+
+	return next_pos; // 기본 이동 가능하면 반환
+}
+
+// [ 프레멘 메인 함수 ]
+void frem_main_func(void) {
+	// [ 프레멘 선택 ]
+	select_frem_act();
+
+	// [ 이동 주기 ]
+	for (int i = 0; i < frem_count; i++) {
+		if (sys_clock <= frem[i]->move_period) {
+			return;
+		}
+	}
+
+	// [ 프레멘 이동 및 순찰 로직 ]
+	for (int i = 0; i < frem_count; i++) {
+		// 경계 검사 추가
+		if (i < 0 || i >= MAX_FREM) {
+			continue;  // 유효하지 않은 인덱스 건너뛰기
+		}
+
+		POSITION target_pos = { -1, -1 };
+
+		// [ 이동 ]
+		if ((frem[i]->dest.row != -1 && frem[i]->dest.column != -1) &&
+			(frem[i]->pos.row != frem[i]->dest.row || frem[i]->pos.column != frem[i]->dest.column)) {
+			target_pos = frem[i]->dest;
+		}
+
+		// [ 순찰 ]
+		else if (frem[i]->is_patrolling) {
+			// [ 현재 위치에서 patrol_point에 도착했다면 ]
+			if (frem[i]->pos.row == frem[i]->patrol_point.row &&
+				frem[i]->pos.column == frem[i]->patrol_point.column) {
+				// [ 원래 목적지로 돌아가기 ]
+				frem[i]->dest = frem[i]->original_dest;
+				target_pos = frem[i]->dest;
+			}
+			// [ dest 위치에 도착했다면 ]
+			else if (frem[i]->pos.row == frem[i]->dest.row &&
+				frem[i]->pos.column == frem[i]->dest.column) {
+				// [ patrol_point로 이동 ]
+				frem[i]->original_dest = frem[i]->dest;  // 현재 목적지 저장
+				frem[i]->dest = frem[i]->patrol_point;
+				target_pos = frem[i]->dest;
+			}
+			// [ 아직 목적지에 도착하지 않았다면 현재 dest로 이동 ]
+			else {
+				target_pos = frem[i]->dest;
+			}
+		}
+
+		// [ 목적지 이동  ]
+		if (target_pos.row != -1 && target_pos.column != -1) {
+			// [ 이전 위치 지우기 ]
+			if (frem[i]->pos.row >= 0 && frem[i]->pos.row < MAP_HEIGHT &&
+				frem[i]->pos.column >= 0 && frem[i]->pos.column < MAP_WIDTH &&
+				map[1][frem[i]->pos.row][frem[i]->pos.column] == frem[i]->repr) {
+				map[1][frem[i]->pos.row][frem[i]->pos.column] = ' ';
+				frem_fight_fact_check[frem[i]->pos.row][frem[i]->pos.column] = 0;
+			}
+
+			// [ 프레멘 이동 ]
+			POSITION next_pos = frem_move(frem[i], target_pos);
+			frem[i]->pos = next_pos;
+
+			// [ 새 위치에 유닛 표시 ]
+			if (frem[i]->pos.row >= 0 && frem[i]->pos.row < MAP_HEIGHT &&
+				frem[i]->pos.column >= 0 && frem[i]->pos.column < MAP_WIDTH) {
+				map[1][frem[i]->pos.row][frem[i]->pos.column] = frem[i]->repr;
+				frem_fight_fact_check[frem[i]->pos.row][frem[i]->pos.column] = 2;
+			}
+		}
+	}
+
+	// [ 프레멘 건물 공격 ]
+	frem_attack_building();
+
+	// [ 프레멘 유닛 공격 ]
+	for (int i = 0; i < frem_count; i++) {
+		if (frem[i]->e_arena_attack == false && frem[i]->e_dor_attack == false && frem[i]->e_gar_attack == false && \
+			frem[i]->e_base_attack == false && frem[i]->e_factory_attack == false) {
+			frem_attack_unit();
+		}
+	}
+
+
+
+	// [ 이동 주기 ]
+	for (int i = 0; i < frem_count; i++) {
+		frem[i]->move_period = sys_clock + frem[i]->next_move_time;
 	}
 }

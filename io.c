@@ -84,7 +84,8 @@ KEY get_key(void) {
 		return k_s;
 	case 115:
 		return k_s;
-
+	
+	// [ M키를 누를 때의 행동 ]
 	case 77:
 		return k_m;
 	case 109:

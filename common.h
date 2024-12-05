@@ -26,6 +26,8 @@
 #define MAX_HAV  50   // 하베스터 최대 50마리 까지 보관 가능
 #define MAX_SOLD 50   // 보병 최대 50마리 까지 보관 가능
 #define MAX_FREM 50   // 프레멘 최대 50마리 까지 보관 가능
+#define MAX_FIGHTER 50
+#define MAX_TANK 50
 
 #define MAX_SPICE 100
 #define MAX_DOR  50
@@ -130,7 +132,14 @@ typedef struct {
 	int eyes;			// 시야
 	int gather_time;    // 하베스터 수확 시간
 	int gather_next_time; // 하베스터 다음 수확 시간 추가
-
+	POSITION patrol_point; // 순찰 목적지
+	bool is_patrolling; // 순찰 활성화 여부
+	POSITION original_dest;  // 원래 목적지를 저장
+	bool e_base_attack;
+	bool e_dor_attack;
+	bool e_gar_attack;
+	bool e_arena_attack;
+	bool e_factory_attack;
 } OBJECT_SAMPLE;
  
 

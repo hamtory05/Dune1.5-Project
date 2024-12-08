@@ -135,11 +135,11 @@ typedef struct {
 	POSITION patrol_point; // 순찰 목적지
 	bool is_patrolling; // 순찰 활성화 여부
 	POSITION original_dest;  // 원래 목적지를 저장
-	bool e_base_attack;
-	bool e_dor_attack;
-	bool e_gar_attack;
-	bool e_arena_attack;
-	bool e_factory_attack;
+	bool e_base_attack; // 적군 본진 공격
+	bool e_dor_attack; // 적군 숙소 공격
+	bool e_gar_attack; // 적군 창고 공격
+	bool e_arena_attack; // 적군 투기장 공격
+	bool e_factory_attack; // 적군 공장 공격
 } OBJECT_SAMPLE;
  
 

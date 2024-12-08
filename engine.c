@@ -53,105 +53,106 @@ void reset_key_false();
 
 // ==== [ 하베스터 & 스파이스 관련 ] ====
 // [ 아군 ]
-OBJECT_SAMPLE* havs[MAX_HAV]; 
-int hav_count = 1; 
+OBJECT_SAMPLE* havs[MAX_HAV]; // 하베스터 배열
+int hav_count = 1; // 하베스터 갯수
 int selected_harvester = -1; // 선택된 하베스터 인덱스 (-1: 선택 안됨)
 
 // [ 적군 ]
-OBJECT_SAMPLE* e_havs[MAX_HAV];
-int e_hav_count = 1;
+OBJECT_SAMPLE* e_havs[MAX_HAV]; // 하베스터 배열
+int e_hav_count = 1; // 하베스터 갯수
 
 
-void hav_reset(void);
-void harvest_move_all(OBJECT_SAMPLE havs[MAX_HAV], int hav_count, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], OBJECT_BUILDING* SPICE);
-int harvest_gather_spice(OBJECT_BUILDING* spice, OBJECT_SAMPLE* hav, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-POSITION harvest_next_move(OBJECT_SAMPLE* hav, POSITION new_dest);
-POSITION harvest_set_dest(POSITION curr, OBJECT_SAMPLE* hav, OBJECT_BUILDING* SPICE);
-void handle_harvester_input(CURSOR cursor, OBJECT_SAMPLE havs[MAX_HAV], int hav_count, OBJECT_BUILDING* SPICE);
+void hav_reset(void); // 하베스터 초기화
+void harvest_move_all(OBJECT_SAMPLE havs[MAX_HAV], int hav_count, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], OBJECT_BUILDING* SPICE); // 하베스터 이동 메인
+int harvest_gather_spice(OBJECT_BUILDING* spice, OBJECT_SAMPLE* hav, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]); // 하베스터 스파이스 수확
+POSITION harvest_next_move(OBJECT_SAMPLE* hav, POSITION new_dest); // 하베스터 이동
+POSITION harvest_set_dest(POSITION curr, OBJECT_SAMPLE* hav, OBJECT_BUILDING* SPICE); // 하베스터 목적지 정하기
+void handle_harvester_input(CURSOR cursor, OBJECT_SAMPLE havs[MAX_HAV], int hav_count, OBJECT_BUILDING* SPICE); // 하베스터 선택 및 스파이스 선택
 
 int spice_in_progress[MAX_SPICE] = { -1 }; // 각 스파이스 매장지에 대한 작업 상태 (-1: 작업 없음)
 
 
 // ==== [ 보병 ] ====
-OBJECT_SAMPLE* sold[MAX_SOLD];
-int sold_count = 0;
-int selected_sold = -1;
+OBJECT_SAMPLE* sold[MAX_SOLD]; // 보병 배열
+int sold_count = 0; // 보병 갯수 
+int selected_sold = -1; // 보병이 선택되었는지 확인
 
-extern int base_barr_check[MAP_HEIGHT][MAP_WIDTH];
+extern int base_barr_check[MAP_HEIGHT][MAP_WIDTH]; 
 
-bool sold_p_key_press = false;
+bool sold_p_key_press = false; // 보병 순찰 p키 bool
 
-void select_sold_act(void);
-void sold_attack_building(void);
-void sold_attack_unit(void);
-void process_enemy_unit(int row, int col, OBJECT_SAMPLE* soldier);
-void handle_enemy_harvester(OBJECT_SAMPLE* soldier, OBJECT_SAMPLE* harvester);
-void handle_enemy_fighter(OBJECT_SAMPLE* soldier, OBJECT_SAMPLE* fighter);
-void handle_enemy_tank(OBJECT_SAMPLE* soldier, OBJECT_SAMPLE* tank);
-POSITION sold_move(OBJECT_SAMPLE* sold_unit, POSITION target_pos);
-void main_sold_func(void);
+void select_sold_act(void); // 보병 행동 선택 
+void sold_attack_building(void); // 보병 건물 공격
+void sold_attack_unit(void); // 보병 유닛 공격
+void process_enemy_unit(int row, int col, OBJECT_SAMPLE* soldier); // 보병 공격 처리
+void handle_enemy_harvester(OBJECT_SAMPLE* soldier, OBJECT_SAMPLE* harvester); // 보병 하베스터 공격
+void handle_enemy_fighter(OBJECT_SAMPLE* soldier, OBJECT_SAMPLE* fighter); // 보병 투사 공격
+void handle_enemy_tank(OBJECT_SAMPLE* soldier, OBJECT_SAMPLE* tank); // 보병 중전차 공격
+POSITION sold_move(OBJECT_SAMPLE* sold_unit, POSITION target_pos); // 보병 이동 
+void main_sold_func(void); // 보병 메인 함수
 
-// [ 프레멘 ]
-OBJECT_SAMPLE* frem[MAX_FREM];
-int frem_count = 0;
-int selected_frem = -1;
+
+// ==== [ 프레멘 ] ====
+OBJECT_SAMPLE* frem[MAX_FREM]; // 프레멘 배열
+int frem_count = 0; // 프레멘 갯수 
+int selected_frem = -1; // 프레멘 선택되었는지 확인
 extern int frem_fight_fact_check[MAP_HEIGHT][MAP_WIDTH];
 
-bool frem_p_key_press = false;
+bool frem_p_key_press = false; // 프레멘 순찰 p키 눌렀는지 확인하는 bool
 
-void select_frem_act(void);
-void frem_attack_building(void);
-void frem_attack_unit(void);
-void frem_main_kill_unit(int row, int col, OBJECT_SAMPLE* frem);
-void frem_kill_enemy_hav(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* harvester);
-void frem_kill_enemy_fighter(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* fighter);
-void frem_kill_enemy_tank(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* tank);
-POSITION frem_move(OBJECT_SAMPLE* frem, POSITION target_pos);
-void frem_main_func(void);
+void select_frem_act(void); // 프레멘 행동 선택 
+void frem_attack_building(void); // 프레멘 건물 공격 
+void frem_attack_unit(void); // 프레멘 유닛 공격
+void frem_main_kill_unit(int row, int col, OBJECT_SAMPLE* frem); // 프레멘 유닛 공격 메인 함수
+void frem_kill_enemy_hav(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* harvester); // 프레멘 하베스터 공격
+void frem_kill_enemy_fighter(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* fighter); // 프레멘 투사 공격
+void frem_kill_enemy_tank(OBJECT_SAMPLE* frem, OBJECT_SAMPLE* tank); // 프레멘 중전차 공격
+POSITION frem_move(OBJECT_SAMPLE* frem, POSITION target_pos); // 프레멘 이동
+void frem_main_func(void); // 프레멘 이동 메인 함수
 
 
 // [ 투사 ]
-OBJECT_SAMPLE* fighter[MAX_FIGHTER];
-int fighter_count = 0;
+OBJECT_SAMPLE* fighter[MAX_FIGHTER]; // 투사 배열
+int fighter_count = 0; // 투사 갯수
 
 
 // [ 중전차 ]
-OBJECT_SAMPLE* tank[MAX_TANK];
-int tank_count = 0;
+OBJECT_SAMPLE* tank[MAX_TANK]; // 중전차 배열
+int tank_count = 0; // 중전차 갯수
 
 
 
 // [ 건물 불러오기 ]
-extern OBJECT_BUILDING e_base;
+extern OBJECT_BUILDING e_base; // 적군 본진
 
-extern OBJECT_BUILDING* SPICE;
-extern int spi_count;
+extern OBJECT_BUILDING* SPICE; // 스파이스
+extern int spi_count; // 스파이스 갯수
 
-extern OBJECT_BUILDING* DOR[MAX_DOR];
-extern int dor_count;
+extern OBJECT_BUILDING* DOR[MAX_DOR]; // 숙소
+extern int dor_count; // 숙소 갯수
 
-extern OBJECT_BUILDING* GAR[MAX_GAR];
-extern int gar_count;
+extern OBJECT_BUILDING* GAR[MAX_GAR]; // 창고 
+extern int gar_count; // 창고 갯수
 
-extern OBJECT_BUILDING* BAR[MAX_BAR];
-extern int bar_count;
+extern OBJECT_BUILDING* BAR[MAX_BAR]; // 병영
+extern int bar_count; // 병영 갯수
 
-extern OBJECT_BUILDING* SHE[MAX_SHE];
-extern int she_count;
+extern OBJECT_BUILDING* SHE[MAX_SHE]; // 은신처
+extern int she_count; // 은신처 갯수
 
-extern OBJECT_BUILDING* ARE[MAX_ARE];
-extern int are_count;
+extern OBJECT_BUILDING* ARE[MAX_ARE]; // 아레나
+extern int are_count; // 아레나 갯수
 
-extern OBJECT_BUILDING* FAC[MAX_FAC];
-extern int fac_count;
+extern OBJECT_BUILDING* FAC[MAX_FAC]; // 공장
+extern int fac_count; // 공장 갯수
 
-extern OBJECT_BUILDING* E_DOR[MAX_DOR];
-extern int e_dor_count;
+extern OBJECT_BUILDING* E_DOR[MAX_DOR]; // 적군 숙소
+extern int e_dor_count; // 적국 숙소 갯수
 
-extern OBJECT_BUILDING* E_GAR[MAX_GAR];
-extern int e_gar_count;
+extern OBJECT_BUILDING* E_GAR[MAX_GAR]; // 적군 창고
+extern int e_gar_count; // 적군 창고 갯수
 
-extern shle_sold_check[MAP_HEIGHT][MAP_WIDTH];
+extern shle_sold_check[MAP_HEIGHT][MAP_WIDTH]; // 은신처  - 1, 보병 - 2 구분
 
 
 /* ================= control =================== */
@@ -160,9 +161,9 @@ CURSOR cursor = { { 1, 1 }, {1, 1} };
 
 int move_count = 0;
 int move_check[2] = { 0 };
-char spice_number[9] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-int spice_plus_value = 0;
-int* spice_plus = &spice_plus_value;
+char spice_number[9] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' }; // 스파이스 숫자
+int spice_plus_value = 0; // 더할 스파이스 갯수
+int* spice_plus = &spice_plus_value; // 스파이스 더할 때 쓰는 변수
 
 /* ================= game data =================== */
 char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH] = { 0 };  // 2, 16, 60
@@ -180,25 +181,24 @@ bool d_key_press = false; // 숙소 설치 확인
 bool g_key_press = false; // 창고 설치 확인
 bool b_b_key_press = false; // 병영 설치 확인
 bool s_key_press = false;  // 은신처 설치 확인
-bool space_key_press = false; // 스페이스바가 눌렸는지 확인 / false = 비활성화, true = 활성하ㅗ
-bool hav_move = false;
-bool h_key_press = false;
-bool space_and_h_key = false;
-bool space_and_m_key = false;
-
-
+bool space_key_press = false; // 스페이스바가 눌렸는지 확인 / false = 비활성화, true = 활성화
+bool hav_move = false; // 하베스터 이동 확인
+bool h_key_press = false; // h키 눌렸는지 확인
+bool space_and_h_key = false; // 스페이스 누르고 h키 눌렀는지 확인
+bool space_and_m_key = false; // 스페이스 누르고 m키 눌렀는지 확인
 bool m_key_press = false; // 이동 확인
 bool p_p_key_press = false; // 순찰 확인
 
 
 // [ 자원 ]
 RESOURCE resource = {
-	.spice = 20,
-	.spice_max = 100,
-	.population = 0,
-	.population_max = 50
+	.spice = 10,
+	.spice_max = 50,
+	.population = 5,
+	.population_max = 30
 };
 
+// [ obj 기본 틀 ]
 OBJECT_SAMPLE obj = { 
 	.pos = {1, 1},
 	.dest = {MAP_HEIGHT - 2, MAP_WIDTH - 2},
@@ -286,11 +286,11 @@ SAND_WIND sand_wind = {
 int main(void) {
 	srand((unsigned int)time(NULL));
 
-	hav_reset();
+	hav_reset(); // 하베스터 초기화
 	init();
 	intro();
 	display(resource, map, cursor, state_map, sysmes_map, order_map, check_friend, big_cursor);
-	p_building(map, check_friend);
+	p_building(map, check_friend); // 건물 출력
 	
 	// [ 시스템 메시지 추가 ]
 	p_system_message("게임이 시작되었습니다.");
@@ -345,6 +345,8 @@ int main(void) {
 				p_system_message("ESC키를 눌렀습니다.");
 				b_key_press = false;
 				space_key_press = false;
+
+				reset_key_false();
 				break;
 
 			// [ SPACE ]
@@ -582,7 +584,7 @@ void init_state(void) {
 			state_map[i][j] = ' ';
 		}
 	}
-}
+} 
 
 void init_sysmes(void) {
 	// [ 시스템 기본 틀 ]
@@ -599,7 +601,7 @@ void init_sysmes(void) {
 			sysmes_map[i][j] = ' ';
 		}
 	}
-}
+} 
 
 void init_order(void) {
 	// [ 명령창 기본 틀 ]
@@ -616,7 +618,7 @@ void init_order(void) {
 			order_map[i][j] = ' ';
 		}
 	}
-}
+} 
 
 void init_unit(void) {
 	// [ 사막 독수리 ]
@@ -633,7 +635,7 @@ void init_unit(void) {
 	// [ 샌드웜 ]
 	map[1][sw1_obj.pos.row][sw1_obj.pos.column] = sw1_obj.repr; 
 	map[1][sw2_obj.pos.row][sw2_obj.pos.column] = sw2_obj.repr; 
-}
+} 
 
 void init(void) {
 	// [ MAP ]
@@ -734,9 +736,9 @@ void sample_obj_move(void) {
 }
 
 
-/* ================= [유닛 움직임 함수 ] =================== */
+/* ================= [ 유닛 움직임 함수 ] =================== */
 
-// [ 사막 독수리 ]
+// [ 사막 독수리 (X) ]
 POSITION d_eagle_next_pos(void) {
 	// 현재 위치와 목적지를 비교해서 이동 방향 결정	
 	POSITION diff = psub(d_eagle.dest, d_eagle.pos);
@@ -778,7 +780,7 @@ POSITION d_eagle_next_pos(void) {
 	}
 }
 
-// [ 사막 독수리 움직임 함수 ]
+// [ 사막 독수리 움직임 함수 (X ]
 void d_eagle_move(void) {
 	if (sys_clock <= d_eagle.next_move_time) {
 		return;
@@ -954,7 +956,7 @@ void sw1_move(void) {
 
 			// [ 하베스터 맵에서 사라지기 ]
 			e_havs[i]->repr = ' ';
-			
+			resource.population -= 5;
 			// [ 임시로 샌드웜 위치 바꾸기 ]
 			POSITION new_dest = { 2, 4 };
 			sw1_obj.dest = new_dest;
@@ -990,6 +992,7 @@ void sw1_move(void) {
 
 			// [ 보병 맵에서 사라지기 ]
 			sold[i]->repr = ' ';
+			resource.population -= 1;
 
 			// [ 임시로 샌드웜 위치 바꾸기 ]
 			POSITION new_dest = { 2, 4 };
@@ -1149,6 +1152,7 @@ void sw2_move(void) {
 
 			// [ 하베스터 맵에서 사라지기 ]
 			havs[i]->repr = ' ';
+			resource.population -= 5;
 
 			// [ 임시로 샌드웜 위치 바꾸기 ]
 			POSITION new_dest = { 12, 55 };
@@ -1202,6 +1206,7 @@ void sw2_move(void) {
 
 			// [ 보병 맵에서 사라지기 ]
 			sold[i]->repr = ' ';
+			resource.population -= 1;
 
 			// [ 임시로 샌드웜 위치 바꾸기 ]
 			POSITION new_dest = { 12, 55 };
@@ -3149,3 +3154,14 @@ void frem_main_func(void) {
 		frem[i]->move_period = sys_clock + frem[i]->next_move_time;
 	}
 }
+
+
+
+
+
+
+
+/* -=-=-=-=-=-=-=-=[ 하코넨 진영 AI ]-=-=-=-=-=-=-=-= -*/
+
+
+

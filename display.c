@@ -12,7 +12,7 @@
 const POSITION resource_pos = { 0, 0 };
 const POSITION map_pos = { 1, 0 };
 
-const POSITION state_pos = { 1, 63 };
+const POSITION state_pos = { 1, 63 }; 
 const POSITION state_mes_pos = { 2, 63 };
 const POSITION state_mes2_pos = { 3, 63 };
 const POSITION state_mes3_pos = { 4, 63 };
@@ -37,7 +37,7 @@ const POSITION order_mes_pos[4] = { {21, 63}, {22, 63}, {23, 63}, {24, 63} };
 char backbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 char frontbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
 
-int colorbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 };
+int colorbuf[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 건물, 유닛 색 확인
  
 char state_backbuf[STATE_HEIGHT][STATE_WIDTH] = { 0 };
 char state_frontbuf[STATE_HEIGHT][STATE_WIDTH] = { 0 };
@@ -48,40 +48,40 @@ char sysmes_frontbuf[SYSMES_HEIGHT][SYSMES_WIDTH] = { 0 };
 char order_backbuf[ORDER_HEIGHT][ORDER_WIDTH] = { 0 };
 char order_frontbuf[ORDER_HEIGHT][ORDER_WIDTH] = { 0 };
 
-// [ 함수 정의 ]
+// == [ 함수 정의 ] ==
 void project(char src[N_LAYER][MAP_HEIGHT][MAP_WIDTH], char dest[MAP_HEIGHT][MAP_WIDTH]);
 void display_resource(RESOURCE resource);
 void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]);
 void display_cursor(CURSOR cursor, int check_friend[MAP_HEIGHT][MAP_WIDTH], bool big_cursor, 
-	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-void set_cursor_color(POSITION pos, char ch);
+	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]); // 커서 출력 함수
+void set_cursor_color(POSITION pos, char ch); // 커서 색 정하기
 void highlight_P_area(POSITION pos, int check_friend[MAP_HEIGHT][MAP_WIDTH], bool big_cursor, 
-	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]);
-void clear_cursor_area(POSITION pos, int check_friend[MAP_HEIGHT][MAP_WIDTH], bool big_cursor);
-void reset_to_original_color(POSITION pos);
+	char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]); // 장판위에 커서 올렸을 때 커서 크기 변하기
+void clear_cursor_area(POSITION pos, int check_friend[MAP_HEIGHT][MAP_WIDTH], bool big_cursor); // 커서 잔상 해결
+void reset_to_original_color(POSITION pos); // 커서 잔상 해결
 
-void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]);
-void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]);
+void display_state_map(char state_map[STATE_HEIGHT][STATE_WIDTH]); // 상태창 그리기 함수
+void state_project(char src[STATE_HEIGHT][STATE_WIDTH], char dest[STATE_HEIGHT][STATE_WIDTH]); // 상태창 기본틀
 
-void sysmes_project(char src[SYSMES_HEIGHT][SYSMES_WIDTH], char dest[SYSMES_HEIGHT][SYSMES_WIDTH]);
-void display_sysmes_map(char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]);
-void clear_sysmes_frame();
+void sysmes_project(char src[SYSMES_HEIGHT][SYSMES_WIDTH], char dest[SYSMES_HEIGHT][SYSMES_WIDTH]); // 시스템창 기본틀 함수
+void display_sysmes_map(char sysmes_map[SYSMES_HEIGHT][SYSMES_WIDTH]); // 시스템창 그리기 함수
+void clear_sysmes_frame(); // 시스템 메시지 초기화 함수
 
-void order_project(char src[ORDER_HEIGHT][ORDER_WIDTH], char dest[ORDER_HEIGHT][ORDER_WIDTH]);
-void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]);
+void order_project(char src[ORDER_HEIGHT][ORDER_WIDTH], char dest[ORDER_HEIGHT][ORDER_WIDTH]); // 명령창 기본틀 함수
+void display_order_map(char order_map[ORDER_HEIGHT][ORDER_WIDTH]); // 명령창 그리기 함수
 
-void reset_order_messages();
-void clear_window(char buffer[][STATE_WIDTH], POSITION base_pos, int height, int width);
+void reset_order_messages(); // 명령 메시지 초기화 함수
+void clear_window(char buffer[][STATE_WIDTH], POSITION base_pos, int height, int width); // 상태 명령창 초기화
 
 
 // [ 변수 정의 ]
 char save_name_for_order[2];
-char* order_message[4];
-char* save_system_message[7] = { NULL };
-char* send_system_message[1];
+char* order_message[4]; // 명령 메시지 
+char* save_system_message[7] = { NULL }; // 시스템 메시지 저장
+char* send_system_message[1]; // 시스템 메시지 
 
-const int pRow[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
-const int pCol[] = { 0, -1, -1, -1, 0, 1, 1, 1 };
+const int pRow[] = { -1, -1, 0, 1, 1, 1, 0, -1 }; // 8방향 확인
+const int pCol[] = { 0, -1, -1, -1, 0, 1, 1, 1 }; // 8방향 확인
 const int bigrow[] = {1, 1, 0}; 
 const int bigcol[] = {0, 1, 1};
 
@@ -89,17 +89,17 @@ int base_barr_check[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 본진 - 1, 병영 - 2 구분
 int shle_sold_check[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 은신처 - 1, 보병 - 2 구분
 int frem_fight_fact_check[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 공장 - 1, 프레멘 - 2, 투사 - 3 구분
 
-bool return_cursor = false;
+bool return_cursor = false; // 커서 되돌리기
 
 // [ 보병 불러오기 ]
-extern OBJECT_SAMPLE* sold[MAX_SOLD];
-extern int sold_count;
-extern int selected_sold;
+extern OBJECT_SAMPLE* sold[MAX_SOLD]; // 보병 배열
+extern int sold_count; // 보병 갯수
+extern int selected_sold; // 보병 선택되었는지 확인
 
 // [ 프레멘 불러오기 ]
-extern OBJECT_SAMPLE* frem[MAX_FREM];
-extern int frem_count;
-extern int selected_frem;
+extern OBJECT_SAMPLE* frem[MAX_FREM]; // 프레멘 배열
+extern int frem_count; // 프레멘 갯수
+extern int selected_frem; // 프레멘 선택되었는지 확인
 
 
 // =================================== [ 건물 ] ======================================= //
@@ -261,20 +261,20 @@ void p_rock_4(OBJECT_BUILDING r4, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH]) {
 	}
 }
 
-OBJECT_BUILDING* SPICE[MAX_SPICE];
-int spi_count = 2;
+OBJECT_BUILDING* SPICE[MAX_SPICE]; // 스파이스 배열
+int spi_count = 2; // 스파이스 갯수 
 
-OBJECT_BUILDING* DOR[MAX_DOR];
-int dor_count = 0;
+OBJECT_BUILDING* DOR[MAX_DOR]; // 숙소 배열
+int dor_count = 0; // 숙소 갯수
 
-OBJECT_BUILDING* GAR[MAX_GAR];
-int gar_count = 0;
+OBJECT_BUILDING* GAR[MAX_GAR]; // 창고 배열
+int gar_count = 0; // 창고 갯수
 
-OBJECT_BUILDING* BAR[MAX_BAR];
-int bar_count = 0;
+OBJECT_BUILDING* BAR[MAX_BAR]; // 병영 배열
+int bar_count = 0; // 병영 갯수
 
-OBJECT_BUILDING* SHE[MAX_SHE];
-int she_count = 0;
+OBJECT_BUILDING* SHE[MAX_SHE]; // 은신처 배열
+int she_count = 0; // 은신처 갯수
 
 
 
@@ -296,17 +296,17 @@ void p_building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_H
 
 
 // [ 적군 건물 ]
-OBJECT_BUILDING* E_DOR[MAX_DOR];
-int e_dor_count = 0;
+OBJECT_BUILDING* E_DOR[MAX_DOR]; // 적군 숙소 배열
+int e_dor_count = 0; // 적군 숙소 갯수
 
-OBJECT_BUILDING* E_GAR[MAX_GAR];
-int e_gar_count = 0;
+OBJECT_BUILDING* E_GAR[MAX_GAR]; // 적군 창고 배열
+int e_gar_count = 0; // 적군 창고 갯수
 
-OBJECT_BUILDING* ARE[MAX_ARE];
-int are_count = 0;
+OBJECT_BUILDING* ARE[MAX_ARE]; // 적군 은신처 배열
+int are_count = 0; // 적군 은신처 갯수
 
-OBJECT_BUILDING* FAC[MAX_FAC];
-int fac_count = 0;
+OBJECT_BUILDING* FAC[MAX_FAC]; // 적군 공장 배열
+int fac_count = 0; // 적군 공장 갯수
 
 
 // =================================== [ DISPLAY ] ======================================= //
@@ -332,7 +332,9 @@ void display(
 
 // [ 화면에 자원, 인구수 출력하는 함수 ]
 void display_resource(RESOURCE resource) {
-	set_color(COLOR_DEFAULT);
+	set_color(COLOR_DEFAULT);// 자원 출력
+	gotoxy(resource_pos);
+	printf("                                                      "); // 기존 문자열 지우기
 	gotoxy(resource_pos);
 	printf("spice = %d/%d, population=%d/%d\n",
 		resource.spice, resource.spice_max,
@@ -1046,7 +1048,11 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 
 			// [ 생산 자원 소모 ]
 			resource->spice -= 2;
+			resource->population_max += 10;
 			p_system_message("숙소를 건설하였습니다.");
+			char mes[100];
+			sprintf_s(mes, sizeof(mes), "숙소 건설 후 최대 인구수: %d", resource->population_max);
+			p_system_message(mes);
 		}
 		else {
 			p_system_message("숙소를 더이상 건설할 수 없습니다.");
@@ -1634,4 +1640,3 @@ void press_f(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MA
 		}	
 	}
 }
-

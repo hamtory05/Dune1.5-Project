@@ -297,16 +297,68 @@ void p_building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_H
 
 // [ 적군 건물 ]
 OBJECT_BUILDING* E_DOR[MAX_DOR]; // 적군 숙소 배열
-int e_dor_count = 0; // 적군 숙소 갯수
+int e_dor_count = 1; // 적군 숙소 갯수
 
 OBJECT_BUILDING* E_GAR[MAX_GAR]; // 적군 창고 배열
-int e_gar_count = 0; // 적군 창고 갯수
+int e_gar_count = 1; // 적군 창고 갯수
 
-OBJECT_BUILDING* ARE[MAX_ARE]; // 적군 은신처 배열
-int are_count = 0; // 적군 은신처 갯수
+OBJECT_BUILDING* ARE[MAX_ARE]; // 적군 투기장 배열
+int are_count = 1; // 적군 투기장 갯수
 
 OBJECT_BUILDING* FAC[MAX_FAC]; // 적군 공장 배열
-int fac_count = 0; // 적군 공장 갯수
+int fac_count = 1; // 적군 공장 갯수
+
+
+
+/* -=-=-=-=-=-=-=-=[ 하코넨 ]-=-=-=-=-=-=-=-= -*/
+
+// [ 하코넨 숙소 1 ]
+OBJECT_BUILDING e_dor1 = {
+	 .pos1 = { 1, 50 },
+	 .pos2 = { 1, 51 },
+	 .pos3 = { 2, 50 },
+	 .pos4 = { 2, 51 },
+	 .repr = 'D',
+	 .hp = 10,
+	 .layer = 0
+};
+
+// [ 하코넨 창고 1 ]
+OBJECT_BUILDING e_gar1 = {
+	 .pos1 = { 1, 47 },
+	 .pos2 = { 1, 46 },
+	 .pos3 = { 2, 47 },
+	 .pos4 = { 2, 46 },
+	 .repr = 'G',
+	 .hp = 10,
+	 .layer = 0
+};
+
+// [ 하코넨 투기장 1 ]
+OBJECT_BUILDING e_are1 = {
+	 .pos1 = { 5, 51 },
+	 .pos2 = { 5, 52 },
+	 .pos3 = { 6, 51 },
+	 .pos4 = { 6, 52 },
+	 .repr = 'A',
+	 .hp = 15,
+	 .layer = 0
+};
+
+
+// [ 하코넨 공장 1 ]
+OBJECT_BUILDING e_fac1 = {
+	 .pos1 = { 5, 47 },
+	 .pos2 = { 5, 46 },
+	 .pos3 = { 6, 47 },
+	 .pos4 = { 6, 46 },
+	 .repr = 'F',
+	 .hp = 30,
+	 .layer = 0
+};
+
+void hako_print_building(OBJECT_BUILDING* bd[], int cnt, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]);
+void hako_list_building(void);
 
 
 // =================================== [ DISPLAY ] ======================================= //
@@ -328,6 +380,8 @@ void display(
 	display_state_map(state_map);
 	display_sysmes_map(sysmes_map);
 	display_order_map(order_map);
+
+	
 }
 
 // [ 화면에 자원, 인구수 출력하는 함수 ]
@@ -406,12 +460,22 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 			
 			// [ 숙소 ]
 			case 'D':
-				color = 180; // 색 아직 미지정 
+				if (check_friend[i][j] == 1) {
+					color = 180;
+				}
+				else if (check_friend[i][j] == 2) {
+					color = COLOR_DEFAULT + 64;
+				}
 				break;
 
 			// [ 창고 ]
 			case 'G':
-				color = 180; // 색 아직 미지정 
+				if (check_friend[i][j] == 1) {
+					color = 180;
+				}
+				else if (check_friend[i][j] == 2) {
+					color = COLOR_DEFAULT + 64;
+				}
 				break;
 
 			// [ 은신처 & 보병 ]
@@ -431,14 +495,14 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 
 			// [ 투기장 ]
 			case 'A':
-
+				color = COLOR_DEFAULT + 64;
 				break;
 			
 			// [ 공장, 프레멘, 투사 ]
 			case 'F':
 				// [ 공장 - 1 ]
 				if (frem_fight_fact_check[i][j] == 1) {
-					color = 180; // 색 아직 미지정
+					color = COLOR_DEFAULT + 64;
 				}
 				// [ 프레멘 - 2 ]
 				else if (frem_fight_fact_check[i][j] == 2) {
@@ -446,7 +510,7 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 				}
 				// [ 투사 - 3 ]
 				else if (frem_fight_fact_check[i][j] == 3) {
-					color = 60; // 색 아직 미지정
+					color = COLOR_DEFAULT + 64;
 				}
 
 				break;
@@ -472,6 +536,11 @@ void display_map(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_
 			// [ 사막 독수리 ]
 			case 'E': 
 				color = COLOR_DEFAULT + 17;
+				break;
+
+			// [ 중전차 ]
+			case 'T':
+				color = COLOR_DEFAULT + 64;
 				break;
 
 			default:
@@ -894,7 +963,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 		// [ 투사 ]
 		else if (frem_fight_fact_check[curr.row][curr.column] == 3) {
 			prints(padd(state_mes_pos, pos_state), "적군 유닛 : 투사");
-			order_message[0] = "적군 유닛은 이동, 순찰 명령어를 사용할 수 없습니다.";
+			order_message[0] = "이동, 순찰 명령어를 사용할 수 없습니다.";
 			prints(padd(order_mes_pos[0], pos_order), order_message[0]);
 		}
 
@@ -944,7 +1013,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 	// [ 중전차 ]
 	case 'T':
 		prints(padd(state_mes_pos, pos_state), "유닛 : 중전차");
-		order_message[0] = "적군 유닛은 이동, 순찰 명령어를 사용할 수 없습니다.";
+		order_message[0] = "이동, 순찰 명령어를 사용할 수 없습니다.";
 		prints(padd(order_mes_pos[0], pos_order), order_message[0]);
 		break;
 	}
@@ -1640,3 +1709,50 @@ void press_f(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][MA
 		}	
 	}
 }
+
+
+
+
+
+
+/* -=-=-=-=-=-=-=-=[ 하코넨 진영 AI ]-=-=-=-=-=-=-=-= -*/
+
+// [ 하코넨 건물 초기화 ]
+void hako_list_building(void) {
+	E_DOR[0] = &e_dor1;
+	E_GAR[0] = &e_gar1;
+	ARE[0] = &e_are1;
+	FAC[0] = &e_fac1;
+}
+
+// [ 하코넨 건물 출력 ]
+void hako_print_building(OBJECT_BUILDING* bd[], int cnt, char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
+	for (int i = 0; i < cnt; i++) {
+		map[0][bd[i]->pos1.row][bd[i]->pos1.column] = bd[i]->repr;
+		map[0][bd[i]->pos2.row][bd[i]->pos2.column] = bd[i]->repr;
+		map[0][bd[i]->pos3.row][bd[i]->pos3.column] = bd[i]->repr;
+		map[0][bd[i]->pos4.row][bd[i]->pos4.column] = bd[i]->repr;
+		check_friend[bd[i]->pos1.row][bd[i]->pos1.column] = 2;
+		check_friend[bd[i]->pos2.row][bd[i]->pos2.column] = 2;
+		check_friend[bd[i]->pos3.row][bd[i]->pos3.column] = 2;
+		check_friend[bd[i]->pos4.row][bd[i]->pos4.column] = 2;
+	}
+}
+
+// [ 하코넨 초기 건물 배치 ]
+void hako_building(char map[N_LAYER][MAP_HEIGHT][MAP_WIDTH], int check_friend[MAP_HEIGHT][MAP_WIDTH]) {
+	// Ai지능이 낮아서 배열에 넣어도 의미가 없지만 그래도 일단 배열에 넣었음.
+	hako_list_building();
+	
+	// [ 하코넨 건물 출력 ]
+	hako_print_building(E_DOR, e_dor_count, map, check_friend); // 숙소
+	hako_print_building(E_GAR, e_gar_count, map, check_friend); // 창고
+	hako_print_building(ARE, are_count, map, check_friend); // 투기장
+	hako_print_building(FAC, fac_count, map, check_friend); // 공장
+	frem_fight_fact_check[FAC[0]->pos1.row][FAC[0]->pos1.column] = 1;
+	frem_fight_fact_check[FAC[0]->pos2.row][FAC[0]->pos2.column] = 1;
+	frem_fight_fact_check[FAC[0]->pos3.row][FAC[0]->pos3.column] = 1;
+	frem_fight_fact_check[FAC[0]->pos4.row][FAC[0]->pos4.column] = 1;
+}
+
+

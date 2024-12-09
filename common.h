@@ -140,6 +140,7 @@ typedef struct {
 	bool e_gar_attack; // 적군 창고 공격
 	bool e_arena_attack; // 적군 투기장 공격
 	bool e_factory_attack; // 적군 공장 공격
+	bool enemy_found; // 적군 찾기
 } OBJECT_SAMPLE;
  
 

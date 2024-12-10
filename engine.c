@@ -203,6 +203,7 @@ char order_map[ORDER_HEIGHT][ORDER_WIDTH] = { 0 }; // 6 60
 int check_friend[MAP_HEIGHT][MAP_WIDTH] = { 0 }; // 0 --> 아무것도 아님, 1 --> 아군, 2 --> 적군
 int hav_gather_spice[MAX_HAV] = { 0 }; // 0 스파이스를 캐지 않음 / 1면 스파이스를 캔 것
 POSITION pre_hav_dest[MAX_HAV] = { 0 };
+extern const POSITION resource_pos;
 
 bool b_key_press = false; // 장판 설치 할 때 b키를 눌렀는지 확인
 bool big_cursor = false; // 2X2 커서 활성화, 비활성화
@@ -551,15 +552,49 @@ void hav_reset(void) {
 
 // [ 인트로 ]
 void intro(void) {
-	printf("DUNE 1.5\n");
+	char* ascii_art[] = {
+		"    ____  __  ___   ________          _________    __  _________          ______________    ____  ______",
+		"   / __ \\/ / / / | / / ____/         / ____/   |  /  |/  / ____/         / ___/_  __/   |  / __ \\/_  __/",
+		"  / / / / / / /  |/ / __/           / / __/ /| | / /|_/ / __/            \\__ \\ / / / /| | / /_/ / / /   ",
+		" / /_/ / /_/ / /|  / /___          / /_/ / ___ |/ /  / / /___           ___/ // / / ___ |/ _, _/ / /    ",
+		"/_____/\\____/_/ |_/_____/__________\\____/_/  |_/_/  /_/_____/__________/____//_/ /_/  |_/_/ |_| /_/     ",
+		"                       /_____/_____/                       /_____/_____/                                "
+	};
+
+	int lines = sizeof(ascii_art) / sizeof(ascii_art[0]);
+
+	for (int i = 0; i < lines; i++) {
+		printf("%s\n", ascii_art[i]);
+	}
+
 	Sleep(2000);
 	system("cls");
 }
 
 // [ 아웃트로 ]
 void outro(void) {
+	gotoxy(resource_pos);
+	for (int i = 0; i < 50; i++) {
+		printf("                                                                                                                          \n"); // 기존 문자열 지우기
+	}
+
+
 	// 화면 전체를 싹다 빈칸으로 만든 후 게임 오버라고 출력하게 하기
-	printf("exiting...\n");
+	char* ascii_art[] = {
+		"   _________    __  _________    ____ _    ____________ ",
+		"  / ____/   |  /  |/  / ____/   / __ \\ |  / / ____/ __ \\",
+		" / / __/ /| | / /|_/ / __/     / / / / | / / __/ / /_/ /",
+		"/ /_/ / ___ |/ /  / / /___    / /_/ /| |/ / /___/ _, _/ ",
+		"\\____/_/  |_/_/  /_/_____/____\\____/ |___/_____/_/ |_|  ",
+		"                        /_____/                         "
+	};
+
+	int lines = sizeof(ascii_art) / sizeof(ascii_art[0]);
+	gotoxy(resource_pos);
+	for (int i = 0; i < lines; i++) {
+		
+		printf("%s\n", ascii_art[i]);
+	}
 	exit(0);
 }
 
@@ -3183,7 +3218,6 @@ void hako_unit_reset(void) {
 	tank[0] = &tank1;
 }
 
-
 // [ 하코넨 초기 유닛 배치 ]
 void hako_unit(void) {
 	// [ 유닛 초기화 ]
@@ -3200,3 +3234,13 @@ void hako_unit(void) {
 
 }
 
+// [ 하코넨 투사 유닛 공격 ] 
+void hako_fighter_attack(void) {
+
+}
+
+
+// [ 하코넨 중전차 유닛 공격 ]
+void hako_tank_attack(void) {
+
+}

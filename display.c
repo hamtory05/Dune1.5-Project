@@ -361,6 +361,7 @@ void hako_print_building(OBJECT_BUILDING* bd[], int cnt, char map[N_LAYER][MAP_H
 void hako_list_building(void);
 
 
+
 // =================================== [ DISPLAY ] ======================================= //
 
 // [ Display 메인 함수 ]

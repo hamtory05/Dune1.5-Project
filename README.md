@@ -8,19 +8,19 @@
 ``` C
 // ====================================[ MAIN CODE ]==================================
 	double check_close = 61.0;
-	int move_i = 2, move_j = 4;
-	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
-		for (int j = 1; j < MAP_WIDTH - 1; j++) {
-			if (map[1][i][j] == 'H' || map[1][i][j] == 'T' || map[1][i][j] == 'S' || map[1][i][j] == 'F') {
-				if (sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2)) < check_close) {
-					check_close = sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2));
-					move_i = i, move_j = j;
-				}
+int move_i = 2, move_j = 4;
+for (int i = 1; i < MAP_HEIGHT - 1; i++) {
+	for (int j = 1; j < MAP_WIDTH - 1; j++) {
+		if (map[1][i][j] == 'H' || map[1][i][j] == 'S' || (map[1][i][j] == 'F')) {
+			if (sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2)) < check_close) {
+				check_close = sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2));
+				move_i = i, move_j = j;
 			}
 		}
 	}
-	POSITION new_dest = { move_i, move_j };
-	sw1_obj.dest = new_dest;
+}
+POSITION new_dest = { move_i, move_j };
+sw1_obj.dest = new_dest;
 
 ```
 
@@ -40,7 +40,7 @@ int move_i = 2, move_j = 4;
 // 두 좌표 사이의 거리와 check_close와 비교하여 가장 가까운 유닛의 행렬을 move_i, move_j에 저장
 for (int i = 1; i < MAP_HEIGHT - 1; i++) {
   for (int j = 1; j < MAP_WIDTH - 1; j++) {
-    if (map[1][i][j] == 'H' || map[1][i][j] == 'T' || map[1][i][j] == 'S' || map[1][i][j] == 'F') {
+    if (map[1][i][j] == 'H' || map[1][i][j] == 'S' || map[1][i][j] == 'F') {
       if (sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2)) < check_close) {
         check_close = sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2));
         move_i = i, move_j = j;

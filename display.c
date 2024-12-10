@@ -1203,6 +1203,7 @@ void state_spacebar(RESOURCE* resource, CURSOR cursor, OBJECT_SAMPLE* f_hav_obj,
 
 			GAR[gar_count] = new_gar;
 			gar_count++;
+			resource->spice_max += 10;
 				
 			// [ 생산 자원 소모 ]
 			resource->spice -= 2;

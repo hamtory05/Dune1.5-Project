@@ -514,8 +514,8 @@ int main(void) {
 	
 		// [ 오브젝트 동작 ]
 		//d_eagle_move();
-		//sw1_move();
-		//sw2_move(); 
+		sw1_move();
+		sw2_move(); 
 
 		// [ 하베스터 움직이기 ]
 		harvest_move_all(*havs, hav_count, map, SPICE);
@@ -876,7 +876,7 @@ POSITION sw1_next_pos(void) {
 	int move_i = 2, move_j = 4;
 	for (int i = 1; i < MAP_HEIGHT - 1; i++) {
 		for (int j = 1; j < MAP_WIDTH - 1; j++) {
-			if (map[1][i][j] == 'H' || map[1][i][j] == 'S' || (map[1][i][j] == 'F' && 1 /* 1은 나중에 수정 프레멘과 투사 구분 */)) {
+			if (map[1][i][j] == 'H' || map[1][i][j] == 'S' || (map[1][i][j] == 'F')) {
 				if (sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2)) < check_close) {
 					check_close = sqrt(pow(i - sw1_obj.pos.row, 2) + pow(j - sw1_obj.pos.column, 2));
 					move_i = i, move_j = j;

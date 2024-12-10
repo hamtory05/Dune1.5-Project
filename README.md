@@ -95,5 +95,7 @@ POSITION new_dest = { move_i, move_j };
 sw1_obj.dest = new_dest;
 ```
 
-
+<br><br>
+## 하코넨 진영 AI
+– 건물, 유닛 초기에 모두 배치, 건설/생산 없음, 유닛 행동 x
 

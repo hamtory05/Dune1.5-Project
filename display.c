@@ -1598,7 +1598,8 @@ void press_s_s(CURSOR cursor, RESOURCE* resource, char map[N_LAYER][MAP_HEIGHT][
 							.e_dor_attack = false,
 							.e_gar_attack = false,
 							.e_arena_attack = false,
-							.e_factory_attack = false
+							.e_factory_attack = false,
+							.enemy_found = false
 						};
 
 						// 배열에 보병 넣기
